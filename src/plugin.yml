@@ -1,0 +1,39 @@
+---
+name: PaperT11EAPI
+main: tk.t11e.api.main.Main
+version: '1.0'
+api-version: '1.15'
+description: A API plugin
+author: booky10
+load: POSTWORLD
+prefix: API
+website: https://t11e.tk
+commands:
+  mineskin:
+    description: The mineskin command
+    usage: 'Usage: /mineskin <gallery|view|generate>'
+    permission: mineskin
+    aliases:
+      - mskin
+      - mskingallery
+      - mineskingallery
+  createcustomskin:
+    description: Create a custom skin from the specified image url
+    usage: 'Usage: /createcustomskin <Name> <URL> [private]'
+    permission: customskins.create
+    aliases:
+      - createskin
+  applyskin:
+    description: Apply a previously generated skin
+    usage: 'Usage: /applyskin <Name> [Player]'
+    permission: customskins.apply
+    aliases:
+      - setcustomskin
+      - applycustomskin
+  npc:
+    description: Create, list or remove NPCs
+    usage: 'Usage: /npc <create|list|remove> <npc> <skin>'
+    permission: npc
+depend:
+  - ProtocolLib
+  - NickNamer
