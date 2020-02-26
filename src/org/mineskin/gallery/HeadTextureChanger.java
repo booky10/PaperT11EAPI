@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 @SuppressWarnings("UnusedReturnValue")
+@Deprecated
 public class HeadTextureChanger {
 
     static final ClassResolver classResolver = new ClassResolver();

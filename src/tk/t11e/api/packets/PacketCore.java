@@ -8,36 +8,27 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import tk.t11e.api.main.Main;
 
 public class PacketCore {
 
     public PacketCore(Plugin plugin) {
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType
                 .Play.Client.USE_ENTITY) {
+            @Override
             public void onPacketReceiving(PacketEvent event) {
                 PacketContainer packet = event.getPacket();
                 Player player = event.getPlayer();
-                if (player == null)return;
+                if (player == null) return;
 
                 EnumWrappers.EntityUseAction type = packet.getEntityUseActions().read(0);
                 int entityId = packet.getIntegers().read(0);
-                Entity entity = null;
-                for (World worlds : Bukkit.getWorlds()) {
-                    for (Entity entities : worlds.getEntities()) {
-                        if (entities.getEntityId() == entityId) {
-                            entity = entities;
-                        }
-                    }
-                }
-                if (entity == null) {
-                    entity = player;
-                }
-                Bukkit.getServer().getPluginManager().callEvent(new PacketUseEntityEvent(type, player,
-                        entity));
+
+                Bukkit.getScheduler().runTask(Main.main,
+                        () -> Bukkit.getPluginManager().callEvent(new PacketUseEntityEvent(type, player,
+                                entityId)));
             }
         });
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType
@@ -53,18 +44,19 @@ public class PacketCore {
                         packet.getBlockPositionModifier().read(0).getY(),
                         packet.getBlockPositionModifier().read(0).getZ());
 
-                Bukkit.getServer().getPluginManager().callEvent(new PacketBlockDigEvent(player,
-                        blockLocation));
+                Bukkit.getScheduler().runTask(Main.main,
+                        () -> Bukkit.getPluginManager().callEvent(new PacketBlockDigEvent(player, blockLocation)));
             }
         });
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType
-                        .Play.Client.FLYING) {
+                .Play.Client.FLYING) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 Player player = event.getPlayer();
                 if (player == null) return;
 
-                Bukkit.getServer().getPluginManager().callEvent(new PacketFlyingEvent(player));
+                Bukkit.getScheduler().runTask(Main.main,
+                        () -> Bukkit.getPluginManager().callEvent(new PacketFlyingEvent(player)));
             }
         });
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType
@@ -73,11 +65,12 @@ public class PacketCore {
             public void onPacketReceiving(PacketEvent event) {
                 PacketContainer packet = event.getPacket();
                 Player player = event.getPlayer();
-                if (player == null)return;
+                if (player == null) return;
 
-                String message=packet.getStrings().read(0);
+                String message = packet.getStrings().read(0);
 
-                Bukkit.getPluginManager().callEvent(new PacketChatEvent(player,message));
+                Bukkit.getScheduler().runTask(Main.main,
+                        () -> Bukkit.getPluginManager().callEvent(new PacketChatEvent(player, message)));
             }
         });
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType
@@ -85,13 +78,12 @@ public class PacketCore {
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 Player player = event.getPlayer();
-                if (player == null)return;
+                if (player == null) return;
 
-                Bukkit.getPluginManager().callEvent(new PacketKeepAliveEvent(player));
+                Bukkit.getScheduler().runTask(Main.main,
+                        () -> Bukkit.getPluginManager().callEvent(new PacketKeepAliveEvent(player)));
             }
         });
-
-
-        //packet.getResourcePackStatus();//TODO
+        //packet.getResourcePackStatus();
     }
 }

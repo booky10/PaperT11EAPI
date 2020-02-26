@@ -97,6 +97,8 @@ public abstract class CommandExecutor {
     }
 
     public List<String> convertTab(String[] args, List<String> completions) {
+        if(completions==null)
+            return Collections.emptyList();
         List<String> list = new ArrayList<>();
 
         if (args.length < 1)

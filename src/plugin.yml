@@ -9,14 +9,10 @@ load: POSTWORLD
 prefix: API
 website: https://t11e.tk
 commands:
-  mineskin:
-    description: The mineskin command
-    usage: 'Usage: /mineskin <gallery|view|generate>'
-    permission: mineskin
-    aliases:
-      - mskin
-      - mskingallery
-      - mineskingallery
+  clientcrash:
+    description: Crashes the whole minecraft client
+    usage: 'Usage: /clientcrash <player>'
+    permission: clientcrash
   createcustomskin:
     description: Create a custom skin from the specified image url
     usage: 'Usage: /createcustomskin <Name> <URL> [private]'

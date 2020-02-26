@@ -1,6 +1,7 @@
 package tk.t11e.api.commands;
 // Created by booky10 in PaperT11EAPI (20:07 24.02.20)
 
+import com.mojang.authlib.properties.Property;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
@@ -15,17 +16,18 @@ import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.main.Main;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
+import tk.t11e.api.util.ExceptionUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@SuppressWarnings("EmptyMethod")
+@SuppressWarnings({"EmptyMethod", "ResultOfMethodCallIgnored"})
 public class NPCCreator extends CommandExecutor {
 
-    final List<NPC> NPCs = new ArrayList<>();
-    public static final File npcFolder= new File(Main.main.getDataFolder(),"NPCs");
+    public static final File npcFolder = new File(Main.main.getDataFolder(), "NPCs");
 
     public NPCCreator() {
         super(Main.main, "npc", "/npc <create|list|remove> <npc> <skin>", "npc",
@@ -34,7 +36,16 @@ public class NPCCreator extends CommandExecutor {
 
     @Override
     public void onExecute(CommandSender sender, String[] args, Integer length) {
-
+        if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("list")) {
+                sender.sendMessage("--------[NPCs]--------");
+                for (NPC npc : NPCRegistry.getNPCs())
+                    sender.sendMessage("  - " + npc.getListName());
+                sender.sendMessage("--------[NPCs]--------");
+            } else
+                help(sender);
+        } else
+            help(sender);
     }
 
     @Override
@@ -42,7 +53,7 @@ public class NPCCreator extends CommandExecutor {
         if (args.length == 1) {
             if (args[0].equalsIgnoreCase("list")) {
                 player.sendMessage("§e--------§6[NPCs]§e--------");
-                for (NPC npc : NPCs) {
+                for (NPC npc : NPCRegistry.getNPCs()) {
                     TextComponent message = new TextComponent("§e  - " + npc.getListName());
                     message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                             new ComponentBuilder("§7Skin: " + npc.getSkinName() + "\n" +
@@ -56,8 +67,8 @@ public class NPCCreator extends CommandExecutor {
                                     "§r\n" +
                                     "§rClick to teleport!").create()));
                     message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                            "/minecraft:teleport @s " + npc.getLocation().getX() + npc.getLocation().getY()
-                                    + npc.getLocation().getZ() + npc.getLocation().getYaw() + npc.getLocation()
+                            "/minecraft:teleport @s " + npc.getLocation().getX() + " " + npc.getLocation().getY()
+                                    + " " + npc.getLocation().getZ() + " " + npc.getLocation().getYaw() + " " + npc.getLocation()
                                     .getPitch()));
                     player.sendMessage(message);
                 }
@@ -65,27 +76,107 @@ public class NPCCreator extends CommandExecutor {
             } else
                 help(player);
         } else if (args.length == 3) {
-            if (args[0].equalsIgnoreCase("add")||args[0].equalsIgnoreCase("create")){
-                Location location = new Location(player.getWorld(),player.getLocation().getX(),
-                        player.getLocation().getY(),player.getLocation().getZ(),player.getLocation().getYaw(),
-                        player.getLocation().getPitch());
-                File skinFile = new File(CustomSkins.skinFolder,args[2]+".json");
-                if(skinFile.exists()){
-                    NPC npc = new NPC(args[1],args[2],args[1],location);
-                    npc.updateNPC().sendPackets();
-                    NPCRegistry.register(npc);
-                    Bukkit.getScheduler().runTaskLater(Main.main, () -> {
-                        File skinSave=new File(npcFolder,npc.getUUID().toString()+".yml");
-                        FileConfiguration skinSaveConfig= YamlConfiguration.loadConfiguration(skinFile);
-                        //TODO
-                    },40);
-                    player.sendMessage(Main.PREFIX+"§aSuccessfully created NPC!");
-                }else
-                    player.sendMessage(Main.PREFIX+"The skin does not exits! Create it with " +
-                            "\"/createcustomskin\"!");
-            }
+            if (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("create")) {
+                Location location = player.getLocation();
+                File skinFile = new File(CustomSkins.skinFolder, args[2] + ".json");
+
+                if (args[1].split("").length <= 16)
+                    if (skinFile.exists()) {
+                        NPC npc = new NPC(args[1], args[2], args[1], false, location, NPC.Action.NOTHING);
+                        npc.updateNPC().sendPackets();
+                        NPCRegistry.register(npc);
+                        Bukkit.getScheduler().runTaskLater(Main.main, () -> {
+                            File skinSave = new File(npcFolder, npc.getUUID().toString() + ".yml");
+                            FileConfiguration skinSaveConfig = YamlConfiguration.loadConfiguration(skinSave);
+
+                            Property property = npc.getProfile().getProperties().get("textures").iterator().next();
+
+                            skinSaveConfig.set("name", args[1]);
+                            skinSaveConfig.set("skin.name", property.getName());
+                            skinSaveConfig.set("skin.value", property.getValue());
+                            skinSaveConfig.set("skin.signature", property.getSignature());
+                            skinSaveConfig.set("listName", npc.getListName());
+                            skinSaveConfig.set("actionString", npc.getActionString());
+                            skinSaveConfig.set("location.world", location.getWorld().getUID().toString());
+                            skinSaveConfig.set("location.x", location.getX());
+                            skinSaveConfig.set("location.y", location.getY());
+                            skinSaveConfig.set("location.z", location.getZ());
+                            skinSaveConfig.set("location.yaw", location.getYaw());
+                            skinSaveConfig.set("location.pitch", location.getPitch());
+                            skinSaveConfig.set("uuid", npc.getUUID().toString());
+                            skinSaveConfig.set("showInTabList", npc.getShowInTabList().toString());
+                            skinSaveConfig.set("action", npc.getAction().toString().toUpperCase());
+                            try {
+                                skinSaveConfig.save(skinSave);
+                            } catch (IOException exception) {
+                                player.sendMessage(Main.PREFIX + "Error saving file!");
+                                ExceptionUtils.print(exception);
+                            }
+                        }, 40);
+                        player.sendMessage(Main.PREFIX + "§aSuccessfully created NPC!");
+                    } else
+                        player.sendMessage(Main.PREFIX + "The skin does not exits! Create it with " +
+                                "\"/createcustomskin\"!");
+                else
+                    player.sendMessage(Main.PREFIX + "Names can only have 16 characters or lower!");
+            } else
+                help(player);
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("remove")) {
+                if (args[1].equalsIgnoreCase("all")) {
+                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                        for (NPC npc : NPCRegistry.getNPCs()) {
+                            npc.remove();
+                            NPCRegistry.unregister(npc);
+                            File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
+                            if (file.exists())
+                                file.delete();
+                        }
+                        player.sendMessage(Main.PREFIX + "§aSuccessfully deleted all of the NPCs!");
+                    });
+                } else if (args[1].equalsIgnoreCase("world")) {
+                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                        for (NPC npc : NPCRegistry.getNPCs())
+                            if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
+                                npc.remove();
+                                NPCRegistry.unregister(npc);
+                                File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
+                                if (file.exists())
+                                    file.delete();
+                            }
+                        player.sendMessage(Main.PREFIX + "§aSuccessfully deleted all of the NPCs in" +
+                                " your world!");
+                    });
+                } else if (args[1].equalsIgnoreCase("nearest")) {
+                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                        double distance = Double.MAX_VALUE;
+                        NPC npcToDelete = null;
+                        for (NPC npc : NPCRegistry.getNPCs())
+                            if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
+                                double distance2 = player.getLocation().distance(npc.getLocation());
+                                if (distance2 < distance) {
+                                    distance = distance2;
+                                    npcToDelete = npc;
+                                }
+                            }
+                        if (npcToDelete != null) {
+                            npcToDelete.remove();
+                            NPCRegistry.unregister(npcToDelete);
+                            File file = new File(npcFolder, npcToDelete.getUUID().toString() + ".yml");
+                            if (file.exists())
+                                file.delete();
+                            player.sendMessage(Main.PREFIX + "§aSuccessfully deleted the nearest NPC!");
+                        } else
+                            player.sendMessage(Main.PREFIX + "There is no NPC nearby!");
+                    });
+                } else
+                    help(player);
+            } else
+                help(player);
         } else
+
             help(player);
+
     }
 
     @Override
@@ -98,14 +189,12 @@ public class NPCCreator extends CommandExecutor {
                 list.add("remove");
             } else if (args.length == 2) {
                 if (args[0].equalsIgnoreCase("remove")) {
-                    for (NPC npc : NPCs) {
-                        list.add(npc.getListName());
-                    }
                     list.add("all");
                     list.add("world");
+                    list.add("nearest");
                 }
-            }else if(args.length==3&&args[0].equalsIgnoreCase("create")
-                    ||args[0].equalsIgnoreCase("add")){
+            } else if (args.length == 3 && args[0].equalsIgnoreCase("create")
+                    || args[0].equalsIgnoreCase("add")) {
                 for (String s : Objects.requireNonNull(CustomSkins.skinFolder.list()))
                     if (s.endsWith(".json"))
                         list.add(s.substring(0, s.length() - 5));
