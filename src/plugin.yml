@@ -1,7 +1,7 @@
 ---
 name: PaperT11EAPI
 main: tk.t11e.api.main.Main
-version: '1.0'
+version: '1.2-SNAPSHOT'
 api-version: '1.15'
 description: A API plugin
 author: booky10
@@ -10,12 +10,12 @@ prefix: API
 website: https://t11e.tk
 commands:
   clientcrash:
-    description: Crashes the whole minecraft client
+    description: Crashes the whole minecraft client (particles)
     usage: 'Usage: /clientcrash <player>'
     permission: clientcrash
   createcustomskin:
     description: Create a custom skin from the specified image url
-    usage: 'Usage: /createcustomskin <Name> <URL> [private]'
+    usage: 'Usage: /createcustomskin <Name> <URL>'
     permission: customskins.create
     aliases:
       - createskin
@@ -33,3 +33,6 @@ commands:
 depend:
   - ProtocolLib
   - NickNamer
+  - LuckPerms
+  - PlaceholderAPI
+  - PlugMan

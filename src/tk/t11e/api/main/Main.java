@@ -18,20 +18,16 @@ import tk.t11e.api.npc.InteractListener;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
 import tk.t11e.api.packets.PacketCore;
-import tk.t11e.api.util.ExceptionUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
-@SuppressWarnings("ResultOfMethodCallIgnored")
 public class Main extends JavaPlugin {
 
     public static final String PREFIX = "§7[§bT11E§7]§c ", NO_PERMISSION = PREFIX + "You don't have " +
             "the permissions for this!";
     public static Main main;
-    public static final Character separator = File.separatorChar;
 
     @Override
     public void onEnable() {
@@ -48,10 +44,6 @@ public class Main extends JavaPlugin {
         new LightLevel().onEnable();
         new CustomSkins().onEnable();
 
-        NPCRegistry.register(new NPC("hypixel", "hypixel", "hypixel", false,
-                new Location(Bukkit.getWorld("lobby"), 0, 100, 0), NPC.Action.EXECUTE_COMMAND)
-                .setActionString("Hello World!"));
-
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         Bukkit.getScheduler().runTaskAsynchronously(this, NPCRegistry::make);
         registerYaml();
@@ -60,24 +52,6 @@ public class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         NPCRegistry.unmake();
-    }
-
-    public FileConfiguration getSkinSaves() {
-        File saves = new File(getDataFolder().getAbsolutePath() + separator + "saves.yml");
-        getDataFolder().mkdirs();
-        if (!saves.exists())
-            saveResource("saves.yml", true);
-
-        return YamlConfiguration.loadConfiguration(saves);
-    }
-
-    public void saveSaves(FileConfiguration config) {
-        File saves = new File(getDataFolder().getAbsolutePath() + separator + "skinSaves.yml");
-        try {
-            config.save(saves);
-        } catch (IOException exception) {
-            ExceptionUtils.print(exception);
-        }
     }
 
     private void registerYaml() {
@@ -93,7 +67,7 @@ public class Main extends JavaPlugin {
                     String actionString = config.getString("actionString");
                     World world = Bukkit.getWorld(UUID.fromString(Objects.requireNonNull(config.getString(
                             "location" +
-                            ".world"))));
+                                    ".world"))));
                     double x = config.getDouble("location.x");
                     double y = config.getDouble("location.y");
                     double z = config.getDouble("location.z");

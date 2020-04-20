@@ -68,7 +68,15 @@ public class NPC {
         world = ((CraftWorld) location.getWorld()).getHandle();
         MineskinClient mineskinClient = new MineskinClient();
 
-        //Bukkit.getScheduler().runTaskAsynchronously(Main.main, this::updateNPC);
+        Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+            try {
+                updateNPC();
+                Thread.sleep(15 * 1000);
+            } catch (InterruptedException ignored) {
+            } finally {
+                NPCRegistry.register(this);
+            }
+        });
     }
 
     public NPC updateNPC() {
@@ -185,6 +193,7 @@ public class NPC {
 
     public NPC remove() {
         remove(Bukkit.getOnlinePlayers());
+        NPCRegistry.unregister(this);
         return this;
     }
 

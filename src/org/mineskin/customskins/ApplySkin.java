@@ -27,8 +27,8 @@ public class ApplySkin extends CommandExecutor {
     }
 
     @Override
-    public void onExecute(CommandSender sender, String[] args, Integer length) {
-        if(args.length==2){
+    public void onExecute(CommandSender sender, String[] args) {
+        if (args.length == 2) {
             Player target;
             if (args[1] != null) {
                 target = Bukkit.getPlayer(args[1]);
@@ -44,7 +44,7 @@ public class ApplySkin extends CommandExecutor {
             File skinFile = new File(CustomSkins.skinFolder, args[0] + ".json");
             if (!skinFile.exists()) {
                 sender.sendMessage("Skin \"" + args[0] + "\" does not exist");
-                    sender.sendMessage("Please use \"/createcustomskin\" first!");
+                sender.sendMessage("Please use \"/createcustomskin\" first!");
                 return;
             }
             JsonObject skinData;
@@ -63,39 +63,39 @@ public class ApplySkin extends CommandExecutor {
 
             NickNamerAPI.getNickManager().setCustomSkin(target.getUniqueId(), "cs_" + args[0]);
             sender.sendMessage("Custom skin changed to " + args[0]);
-        }else
+        } else
             help(sender);
     }
 
     @Override
-    public void onPlayerExecute(Player player, String[] args, Integer length) {
-        if(args.length>=1&&args.length<=2){
+    public void onPlayerExecute(Player player, String[] args) {
+        if (args.length >= 1 && args.length <= 2) {
             Player target;
-            if (args.length==2) {
+            if (args.length == 2) {
                 if (!player.hasPermission("customskins.apply.other")) {
                     player.sendMessage(Main.NO_PERMISSION);
                     return;
                 }
                 target = Bukkit.getPlayer(args[1]);
                 if (target == null || !target.isOnline()) {
-                    player.sendMessage(Main.PREFIX+"Player not found!");
+                    player.sendMessage(Main.PREFIX + "Player not found!");
                     return;
                 }
             } else
-                target=player;
+                target = player;
 
             File skinFile = new File(CustomSkins.skinFolder, args[0] + ".json");
             if (!skinFile.exists()) {
-                player.sendMessage(Main.PREFIX+"Skin \"" + args[0] + "\" does not exist");
+                player.sendMessage(Main.PREFIX + "Skin \"" + args[0] + "\" does not exist");
                 if (player.hasPermission("customskins.create"))
-                    player.sendMessage(Main.PREFIX+"Please use \"/createcustomskin\" first!");
+                    player.sendMessage(Main.PREFIX + "Please use \"/createcustomskin\" first!");
                 return;
             }
             JsonObject skinData;
             try {
                 skinData = new JsonParser().parse(new FileReader(skinFile)).getAsJsonObject();
             } catch (IOException e) {
-                player.sendMessage(Main.PREFIX+"Failed to load skin from file: " + e.getMessage());
+                player.sendMessage(Main.PREFIX + "Failed to load skin from file: " + e.getMessage());
                 Main.main.getLogger().log(Level.SEVERE, "Failed to load skin", e);
                 return;
             }
@@ -106,21 +106,20 @@ public class ApplySkin extends CommandExecutor {
             }
 
             NickNamerAPI.getNickManager().setCustomSkin(target.getUniqueId(), "cs_" + args[0]);
-            player.sendMessage(Main.PREFIX+"§aCustom skin changed to " + args[0]);
-        }else
+            player.sendMessage(Main.PREFIX + "§aCustom skin changed to " + args[0]);
+        } else
             help(player);
     }
 
     @Override
-    public List<String> onComplete(CommandSender sender, String[] args, Integer length) {
+    public List<String> onComplete(CommandSender sender, String[] args, List<String> completions) {
         ArrayList<String> list = new ArrayList<>();
-        if (args[0] == null || args[0].isEmpty() || !new File(CustomSkins.skinFolder,
-                args[0] + ".json").exists())
-            for (String s : Objects.requireNonNull(CustomSkins.skinFolder.list()))
-                if (s.endsWith(".json"))
-                    list.add(s.substring(0, s.length() - 5));
-                else
-                    list.addAll(getOnlinePlayerNames());
+        if (args.length == 1) {
+            for (String files : Objects.requireNonNull(CustomSkins.skinFolder.list()))
+                if (files.endsWith(".json"))
+                    list.add(files.substring(0, files.length() - 5));
+        } else if (args.length == 2)
+            list.addAll(getOnlinePlayerNames());
         return list;
     }
 }

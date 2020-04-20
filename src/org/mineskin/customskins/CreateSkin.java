@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -27,12 +26,12 @@ public class CreateSkin extends CommandExecutor {
 
 
     public CreateSkin() {
-        super(Main.main, "createcustomskin", "/createcustomskin <Name> <URL> [private]",
-                "customskins.create", Receiver.ALL,"createskin");
+        super(Main.main, "createcustomskin", "/createcustomskin <Name> <URL>",
+                "customskins.create", Receiver.ALL, "createskin");
     }
 
     @Override
-    public void onExecute(CommandSender sender, String[] args, Integer length) {
+    public void onExecute(CommandSender sender, String[] args) {
         try {
             if (args.length >= 2 && args.length <= 3) {
                 URL url = new URL(args[0]);
@@ -119,10 +118,15 @@ public class CreateSkin extends CommandExecutor {
     }
 
     @Override
-    public void onPlayerExecute(Player player, String[] args, Integer length) {
+    public void onPlayerExecute(Player player, String[] args) {
         try {
             if (args.length >= 2 && args.length <= 3) {
-                URL url = new URL(args[1]);
+                URL url;
+                if (!args[1].contains("."))
+                    url = new URL("https://texture.namemc.com/" + args[1].substring(0, 2) + "/" + args[1].
+                            substring(2, 4) + "/" + args[1] + ".png");
+                else
+                url = new URL(args[1]);
                 final File skinFile = new File(CustomSkins.skinFolder, args[0] + ".json");
                 boolean privateUpload = false;
                 if (args.length == 3 && (args[2].equalsIgnoreCase("true")
@@ -143,26 +147,29 @@ public class CreateSkin extends CommandExecutor {
 
                     @Override
                     public void waiting(long l) {
-                        player.sendMessage(Main.PREFIX+"§7Waiting " + (l / 1000D) + "s to upload skin...");
+                        player.sendMessage(Main.PREFIX + "§7Waiting " + (l / 1000D) + "s to upload skin...");
                     }
 
                     @Override
                     public void uploading() {
-                        player.sendMessage(Main.PREFIX+"§eUploading skin...");
+                        player.sendMessage(Main.PREFIX + "§eUploading skin...");
                     }
 
                     @Override
                     public void error(String s) {
-                        player.sendMessage(Main.PREFIX+"§cError while generating skin: " + s);
-                        player.sendMessage(Main.PREFIX+"§cPlease make sure the image is a valid skin texture and try again.");
+                        player.sendMessage(Main.PREFIX + "§cError while generating skin: " + s);
+                        player.sendMessage(Main.PREFIX + "§cPlease make sure the image is a valid skin texture " +
+                                "and try again.");
 
                         skinFile.delete();
                     }
 
                     @Override
                     public void exception(Exception exception) {
-                        player.sendMessage(Main.PREFIX+"§cException while generating skin, see console for details: " + exception.getMessage());
-                        player.sendMessage(Main.PREFIX+"§cPlease make sure the image is a valid skin texture and try again.");
+                        player.sendMessage(Main.PREFIX + "§cException while generating skin, see console for " +
+                                "details: " + exception.getMessage());
+                        player.sendMessage(Main.PREFIX + "§cPlease make sure the image is a valid skin texture " +
+                                "and try again.");
 
                         skinFile.delete();
 
@@ -171,7 +178,7 @@ public class CreateSkin extends CommandExecutor {
 
                     @Override
                     public void done(Skin skin) {
-                        player.sendMessage(Main.PREFIX+"§aSkin data generated.");
+                        player.sendMessage(Main.PREFIX + "§aSkin data generated.");
                         JsonObject jsonObject = new JsonObject();
                         jsonObject.addProperty("id", skin.data.uuid.toString());
                         jsonObject.addProperty("name", "");
@@ -189,7 +196,7 @@ public class CreateSkin extends CommandExecutor {
                         try (Writer writer = new FileWriter(skinFile)) {
                             new Gson().toJson(jsonObject, writer);
                         } catch (IOException e) {
-                            player.sendMessage(Main.PREFIX+"Failed to save skin to file: " + e.getMessage());
+                            player.sendMessage(Main.PREFIX + "Failed to save skin to file: " + e.getMessage());
                             Main.main.getLogger().log(Level.SEVERE, "Failed to save skin", e);
                         }
                     }
@@ -197,16 +204,16 @@ public class CreateSkin extends CommandExecutor {
             } else
                 help(player);
         } catch (MalformedURLException e) {
-            player.sendMessage(Main.PREFIX+"Invalid URL");
+            player.sendMessage(Main.PREFIX + "Invalid URL");
         } catch (IOException e) {
-            player.sendMessage(Main.PREFIX+"Unexpected IOException: " + e.getMessage());
+            player.sendMessage(Main.PREFIX + "Unexpected IOException: " + e.getMessage());
             Main.main.getLogger().log(Level.SEVERE, "Unexpected IOException while creating skin '" + args[0]
                     + "' with source '" + args[1] + "'", e);
         }
     }
 
     @Override
-    public List<String> onComplete(CommandSender sender, String[] args, Integer length) {
-        return Collections.emptyList();
+    public List<String> onComplete(CommandSender sender, String[] args, List<String> completions) {
+        return completions;
     }
 }

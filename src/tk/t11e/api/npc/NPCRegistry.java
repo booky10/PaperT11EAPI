@@ -9,34 +9,54 @@ import java.util.List;
 
 public class NPCRegistry {
 
-    private static final List<NPC> NPCs = new ArrayList<>();
+    private static List<NPC> NPCs;
 
     public static void register(NPC npc) {
-        NPCs.add(npc);
+        if (!NPCs.contains(npc))
+            NPCs.add(npc);
     }
 
     public static void unmake() {
-        for (NPC npc : NPCs)
-            npc.remove();
+        if (NPCs == null)
+            NPCs = new ArrayList<>();
+        else {
+            List<NPC> NPCs = new ArrayList<>(getNPCs());
+            for (NPC npc : NPCs)
+                npc.remove();
+        }
     }
 
     public static void make() {
         Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(Main.class), () -> {
+            if (NPCs == null)
+                NPCs = new ArrayList<>();
             for (NPC npc : NPCs) {
-                Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(Main.class), () -> {
-                    npc.remove();
-                    npc.updateNPC();
-                    npc.sendPackets();
-                });
+                npc.remove();
+                npc.updateNPC();
+                Bukkit.getScheduler().runTaskAsynchronously(Main.main, (Runnable) npc::sendPackets);
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
 
     public static List<NPC> getNPCs() {
+        if (NPCs == null)
+            NPCs = new ArrayList<>();
         return NPCs;
     }
 
     public static void unregister(NPC npc) {
+        if (NPCs == null)
+            NPCs = new ArrayList<>();
         NPCs.remove(npc);
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

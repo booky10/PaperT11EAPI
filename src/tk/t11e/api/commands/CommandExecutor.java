@@ -1,6 +1,8 @@
 package tk.t11e.api.commands;
 // Created by booky10 in BungeeT11E (19:07 03.02.20)
 
+import me.clip.placeholderapi.PlaceholderAPI;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -14,26 +16,26 @@ import java.util.*;
 @SuppressWarnings("unused")
 public abstract class CommandExecutor {
 
-    private final String command, permission,usage;
+    private final String command, permission, usage;
     private final String[] aliases;
     private final Receiver receiver;
     private final JavaPlugin plugin;
     private final Executor executor;
 
     public CommandExecutor(JavaPlugin plugin, String command, String usage, Receiver receiver) {
-        this(plugin, command,usage, "",receiver);
+        this(plugin, command, usage, "", receiver);
     }
 
     public CommandExecutor(JavaPlugin plugin, String command, String usage, String permission,
                            Receiver receiver, String... aliases) {
         this.command = command;
         this.permission = permission;
-        this.usage=usage;
+        this.usage = usage;
         this.aliases = aliases;
-        this.receiver=receiver;
+        this.receiver = receiver;
         this.plugin = plugin;
 
-        this.executor=new Executor();
+        this.executor = new Executor();
     }
 
     public Boolean hasPermission(CommandSender sender) {
@@ -57,11 +59,11 @@ public abstract class CommandExecutor {
     }
 
     public Boolean arePlayersAllowed() {
-        return receiver.equals(Receiver.ALL)||receiver.equals(Receiver.PLAYER);
+        return receiver.equals(Receiver.ALL) || receiver.equals(Receiver.PLAYER);
     }
 
     public Boolean areConsolesAllowed() {
-        return receiver.equals(Receiver.ALL)||receiver.equals(Receiver.CONSOLE);
+        return receiver.equals(Receiver.ALL) || receiver.equals(Receiver.CONSOLE);
     }
 
     public CommandExecutor init() {
@@ -83,21 +85,23 @@ public abstract class CommandExecutor {
     }
 
     public void help(CommandSender sender) {
-        if(sender instanceof Player)
-            sender.sendMessage(Main.PREFIX+"Usage: "+getUsage());
+        if (sender instanceof Player)
+            sender.sendMessage(Main.PREFIX + "Usage: " + getUsage());
         else
-            sender.sendMessage("Usage: "+getUsage());
+            sender.sendMessage("Usage: " + getUsage());
     }
 
     public List<String> getOnlinePlayerNames() {
-        List<String> names=new ArrayList<>();
+        List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers())
-            names.add(player.getDisplayName());
+            if (!PlaceholderAPI.setPlaceholders(player, "%supervanish_isvanished%").equals("true"))
+                if (!player.hasMetadata("vanished"))
+                    names.add(player.getDisplayName());
         return names;
     }
 
     public List<String> convertTab(String[] args, List<String> completions) {
-        if(completions==null)
+        if (completions == null)
             return Collections.emptyList();
         List<String> list = new ArrayList<>();
 
@@ -108,17 +112,17 @@ public abstract class CommandExecutor {
             return completions;
 
         for (String entry : completions)
-            if (entry.startsWith(word)&& !entry.equals(word))
+            if (StringUtils.startsWithIgnoreCase(entry, word) && !entry.equals(word))
                 list.add(entry);
 
         return list;
     }
 
-    public abstract void onExecute(CommandSender sender, String[] args, Integer length);
+    public abstract void onExecute(CommandSender sender, String[] args);
 
-    public abstract void onPlayerExecute(Player player, String[] args, Integer length);
+    public abstract void onPlayerExecute(Player player, String[] args);
 
-    public abstract List<String> onComplete(CommandSender sender, String[] args, Integer length);
+    public abstract List<String> onComplete(CommandSender sender, String[] args, List<String> completions);
 
     protected enum Receiver {
         ALL,
@@ -130,17 +134,17 @@ public abstract class CommandExecutor {
     class Executor implements TabExecutor, org.bukkit.command.CommandExecutor {
 
         @Override
-        public boolean onCommand(CommandSender sender, Command command, String label,String[] args) {
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
             if (sender instanceof Player && arePlayersAllowed()) {
                 Player player = (Player) sender;
                 if (getPermission().equals(""))
-                    onPlayerExecute(player, args, args.length);
+                    onPlayerExecute(player, args);
                 else if (hasPermission(player))
-                    onPlayerExecute(player, args, args.length);
+                    onPlayerExecute(player, args);
                 else
                     player.sendMessage(Main.NO_PERMISSION);
             } else if (areConsolesAllowed())
-                onExecute(sender, args, args.length);
+                onExecute(sender, args);
             else
                 sender.sendMessage("You must execute this command as a player!");
             return true;
@@ -148,8 +152,9 @@ public abstract class CommandExecutor {
 
         @Override
         public List<String> onTabComplete(CommandSender sender, Command command, String label,
-                                              String[] args) {
-                return convertTab(args, onComplete(sender, args, args.length));
+                                          String[] args) {
+            List<String> emptyCompletions = new ArrayList<>();
+            return convertTab(args, onComplete(sender, args, emptyCompletions));
         }
     }
 }

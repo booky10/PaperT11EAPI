@@ -18,7 +18,7 @@ public class ClientCrash extends CommandExecutor {
     }
 
     @Override
-    public void onExecute(CommandSender sender, String[] args, Integer length) {
+    public void onExecute(CommandSender sender, String[] args) {
         if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null) {
@@ -31,7 +31,7 @@ public class ClientCrash extends CommandExecutor {
     }
 
     @Override
-    public void onPlayerExecute(Player player, String[] args, Integer length) {
+    public void onPlayerExecute(Player player, String[] args) {
         if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null) {
@@ -44,9 +44,9 @@ public class ClientCrash extends CommandExecutor {
     }
 
     @Override
-    public List<String> onComplete(CommandSender sender, String[] args, Integer length) {
+    public List<String> onComplete(CommandSender sender, String[] args, List<String> completions) {
         if (args.length == 1)
-            return getOnlinePlayerNames();
-        return null;
+            completions.addAll(getOnlinePlayerNames());
+        return completions;
     }
 }

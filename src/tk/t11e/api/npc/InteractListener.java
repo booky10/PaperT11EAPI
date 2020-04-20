@@ -3,13 +3,13 @@ package tk.t11e.api.npc;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import tk.t11e.api.packets.PacketUseEntityEvent;
+import tk.t11e.api.packets.PacketUseEntityEventID;
 import tk.t11e.api.util.BungeeUtils;
 
 public class InteractListener implements Listener {
 
     @EventHandler
-    public void onPacketInteract(PacketUseEntityEvent event) {
+    public void onPacketInteract(PacketUseEntityEventID event) {
         for (NPC npc : NPCRegistry.getNPCs())
             if (npc.getEntity().getId() == event.getId())
                 if (!(npc.getAction() == null || npc.getAction().equals(NPC.Action.NOTHING)))

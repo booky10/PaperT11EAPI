@@ -21,6 +21,7 @@ import tk.t11e.api.util.ExceptionUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,7 +36,7 @@ public class NPCCreator extends CommandExecutor {
     }
 
     @Override
-    public void onExecute(CommandSender sender, String[] args, Integer length) {
+    public void onExecute(CommandSender sender, String[] args) {
         if (args.length == 1) {
             if (args[0].equalsIgnoreCase("list")) {
                 sender.sendMessage("--------[NPCs]--------");
@@ -49,7 +50,7 @@ public class NPCCreator extends CommandExecutor {
     }
 
     @Override
-    public void onPlayerExecute(Player player, String[] args, Integer length) {
+    public void onPlayerExecute(Player player, String[] args) {
         if (args.length == 1) {
             if (args[0].equalsIgnoreCase("list")) {
                 player.sendMessage("§e--------§6[NPCs]§e--------");
@@ -83,8 +84,6 @@ public class NPCCreator extends CommandExecutor {
                 if (args[1].split("").length <= 16)
                     if (skinFile.exists()) {
                         NPC npc = new NPC(args[1], args[2], args[1], false, location, NPC.Action.NOTHING);
-                        npc.updateNPC().sendPackets();
-                        NPCRegistry.register(npc);
                         Bukkit.getScheduler().runTaskLater(Main.main, () -> {
                             File skinSave = new File(npcFolder, npc.getUUID().toString() + ".yml");
                             FileConfiguration skinSaveConfig = YamlConfiguration.loadConfiguration(skinSave);
@@ -125,12 +124,14 @@ public class NPCCreator extends CommandExecutor {
             if (args[0].equalsIgnoreCase("remove")) {
                 if (args[1].equalsIgnoreCase("all")) {
                     Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
-                        for (NPC npc : NPCRegistry.getNPCs()) {
-                            npc.remove();
-                            NPCRegistry.unregister(npc);
-                            File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
-                            if (file.exists())
-                                file.delete();
+                        List<NPC> NPCs = new ArrayList<>(NPCRegistry.getNPCs());
+                        for (NPC npc : NPCs) {
+                            Bukkit.getScheduler().runTaskLaterAsynchronously(Main.main, () -> {
+                                npc.remove();
+                                File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
+                                if (file.exists())
+                                    file.delete();
+                            }, 20);
                         }
                         player.sendMessage(Main.PREFIX + "§aSuccessfully deleted all of the NPCs!");
                     });
@@ -139,7 +140,6 @@ public class NPCCreator extends CommandExecutor {
                         for (NPC npc : NPCRegistry.getNPCs())
                             if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
                                 npc.remove();
-                                NPCRegistry.unregister(npc);
                                 File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
@@ -149,25 +149,27 @@ public class NPCCreator extends CommandExecutor {
                     });
                 } else if (args[1].equalsIgnoreCase("nearest")) {
                     Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
-                        double distance = Double.MAX_VALUE;
-                        NPC npcToDelete = null;
-                        for (NPC npc : NPCRegistry.getNPCs())
-                            if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
-                                double distance2 = player.getLocation().distance(npc.getLocation());
-                                if (distance2 < distance) {
-                                    distance = distance2;
-                                    npcToDelete = npc;
+                        try {
+                            double distance = Double.MAX_VALUE;
+                            NPC npcToDelete = null;
+                            for (NPC npc : NPCRegistry.getNPCs())
+                                if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
+                                    double distance2 = player.getLocation().distance(npc.getLocation());
+                                    if (distance2 < distance) {
+                                        distance = distance2;
+                                        npcToDelete = npc;
+                                    }
                                 }
-                            }
-                        if (npcToDelete != null) {
-                            npcToDelete.remove();
-                            NPCRegistry.unregister(npcToDelete);
-                            File file = new File(npcFolder, npcToDelete.getUUID().toString() + ".yml");
-                            if (file.exists())
-                                file.delete();
-                            player.sendMessage(Main.PREFIX + "§aSuccessfully deleted the nearest NPC!");
-                        } else
-                            player.sendMessage(Main.PREFIX + "There is no NPC nearby!");
+                            if (npcToDelete != null) {
+                                npcToDelete.remove();
+                                File file = new File(npcFolder, npcToDelete.getUUID().toString() + ".yml");
+                                if (file.exists())
+                                    file.delete();
+                                player.sendMessage(Main.PREFIX + "§aSuccessfully deleted the nearest NPC!");
+                            } else
+                                player.sendMessage(Main.PREFIX + "There is no NPC nearby!");
+                        } catch (ConcurrentModificationException ignored) {
+                        }
                     });
                 } else
                     help(player);
@@ -180,29 +182,28 @@ public class NPCCreator extends CommandExecutor {
     }
 
     @Override
-    public List<String> onComplete(CommandSender sender, String[] args, Integer length) {
-        List<String> list = new ArrayList<>();
+    public List<String> onComplete(CommandSender sender, String[] args, List<String> completions) {
         if (sender instanceof Player) {
             if (args.length == 1) {
-                list.add("create");
-                list.add("list");
-                list.add("remove");
+                completions.add("create");
+                completions.add("list");
+                completions.add("remove");
             } else if (args.length == 2) {
                 if (args[0].equalsIgnoreCase("remove")) {
-                    list.add("all");
-                    list.add("world");
-                    list.add("nearest");
+                    completions.add("all");
+                    completions.add("world");
+                    completions.add("nearest");
                 }
             } else if (args.length == 3 && args[0].equalsIgnoreCase("create")
                     || args[0].equalsIgnoreCase("add")) {
                 for (String s : Objects.requireNonNull(CustomSkins.skinFolder.list()))
                     if (s.endsWith(".json"))
-                        list.add(s.substring(0, s.length() - 5));
+                        completions.add(s.substring(0, s.length() - 5));
                     else
-                        list.addAll(getOnlinePlayerNames());
+                        completions.addAll(getOnlinePlayerNames());
             }
         } else if (args.length == 1)
-            list.add("list");
-        return list;
+            completions.add("list");
+        return completions;
     }
 }
