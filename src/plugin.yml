@@ -1,7 +1,7 @@
 ---
 name: PaperT11EAPI
 main: tk.t11e.api.main.Main
-version: '1.2-SNAPSHOT'
+version: '1.3-SNAPSHOT'
 api-version: '1.15'
 description: A API plugin
 author: booky10
@@ -30,9 +30,15 @@ commands:
     description: Create, list or remove NPCs
     usage: 'Usage: /npc <create|list|remove> <npc> <skin>'
     permission: npc
+  maxhealth:
+    description: Set the max health of a player
+    usage: 'Usage: /maxhealth <player> <health>'
+    permission: maxhealth
+    aliases: ["setmaxhealth", "smh", "mh"]
 depend:
   - ProtocolLib
   - NickNamer
   - LuckPerms
   - PlaceholderAPI
   - PlugMan
+  - PacketWrapper

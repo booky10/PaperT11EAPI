@@ -35,8 +35,12 @@ public class ClientCrash extends CommandExecutor {
         if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null) {
-                target.spawnParticle(Particle.EXPLOSION_HUGE, target.getEyeLocation(), Integer.MAX_VALUE);
-                player.sendMessage(Main.PREFIX + "§aSuccessfully crashed player!");
+                if (!target.hasPermission("clientcrash.exempt")
+                        || player.hasPermission("clientcrash.exempt.bypass")) {
+                    target.spawnParticle(Particle.EXPLOSION_HUGE, target.getEyeLocation(), Integer.MAX_VALUE);
+                    player.sendMessage(Main.PREFIX + "§aSuccessfully crashed player!");
+                } else
+                    player.sendMessage(Main.PREFIX + "You can't crash that player!");
             } else
                 player.sendMessage(Main.PREFIX + "Unknown player!");
         } else

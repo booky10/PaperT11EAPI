@@ -1,16 +1,14 @@
 package tk.t11e.api.util;
 // Created by booky10 in knockIt (19:36 14.01.20)
 
+import com.sun.istack.internal.NotNull;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ItemBuilder {
 
@@ -18,7 +16,7 @@ public class ItemBuilder {
     private int amount;
     private String name;
     private boolean unbreakable;
-    private HashMap<Enchantment, Integer> enchantments;
+    private Map<Enchantment, Integer> enchantments;
     private List<ItemFlag> itemFlags;
     private List<String> lore;
     private Integer customDataModel;
@@ -30,7 +28,7 @@ public class ItemBuilder {
         unbreakable = false;
         enchantments = new HashMap<>();
         itemFlags = new ArrayList<>();
-        lore=new ArrayList<>();
+        lore = new ArrayList<>();
         customDataModel = 0;
     }
 
@@ -49,6 +47,23 @@ public class ItemBuilder {
     public ItemBuilder setAmount(int amount) {
         this.amount = amount;
         return this;
+    }
+
+    public static ItemBuilder fromItemStack(@NotNull ItemStack from) {
+        ItemBuilder builder = new ItemBuilder(from.getType(), from.getAmount(), getRealDisplayName(from));
+        builder.setUnbreakable(from.getItemMeta().isUnbreakable());
+        builder.setEnchantments(from.getEnchantments());
+        builder.setItemFlags(OtherUtils.setToList(from.getItemFlags()));
+        builder.setLore(from.getLore());
+        builder.setCustomDataModel(from.getItemMeta().getCustomModelData());
+        return builder;
+    }
+
+    public static String getRealDisplayName(ItemStack item) {
+        if (item.getItemMeta().hasDisplayName())
+            return item.getItemMeta().getDisplayName();
+        else
+            return item.getI18NDisplayName();
     }
 
     public ItemBuilder addAllItemFlags() {
@@ -119,11 +134,11 @@ public class ItemBuilder {
         return this;
     }
 
-    public HashMap<Enchantment, Integer> getEnchantments() {
+    public Map<Enchantment, Integer> getEnchantments() {
         return enchantments;
     }
 
-    public ItemBuilder setEnchantments(HashMap<Enchantment, Integer> enchantments) {
+    public ItemBuilder setEnchantments(Map<Enchantment, Integer> enchantments) {
         this.enchantments = enchantments;
         return this;
     }
@@ -137,26 +152,26 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder setLore(String... lore){
+    public ItemBuilder setLore(String... lore) {
         return setLore(Arrays.asList(lore));
     }
 
-    public ItemBuilder setLore(List<String> lore){
-        this.lore=lore;
+    public ItemBuilder setLore(List<String> lore) {
+        this.lore = lore;
         return this;
     }
 
-    public ItemBuilder clearLore(){
+    public ItemBuilder clearLore() {
         lore.clear();
         return this;
     }
 
-    public ItemBuilder addLoreLine(String line){
+    public ItemBuilder addLoreLine(String line) {
         lore.add(line);
         return this;
     }
 
-    public ItemBuilder addLoreLines(String... lines){
+    public ItemBuilder addLoreLines(String... lines) {
         lore.addAll(Arrays.asList(lines));
         return this;
     }

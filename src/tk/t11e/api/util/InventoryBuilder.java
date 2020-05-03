@@ -7,6 +7,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Arrays;
+import java.util.Random;
 
 public class InventoryBuilder {
 
@@ -34,6 +35,25 @@ public class InventoryBuilder {
 
     public InventoryBuilder setItem(Integer slot, ItemStack item) {
         this.contents[slot] = item;
+        return this;
+    }
+
+    public InventoryBuilder randomPattern(Material... materials) {
+        for (int i = 0; i < contents.length; i++)
+            contents[i] = new ItemBuilder(materials[new Random().nextInt(materials.length)])
+                    .addAllItemFlags().noName().build();
+        return this;
+    }
+
+    public InventoryBuilder randomPattern(ItemBuilder... itemBuilder) {
+        for (int i = 0; i < contents.length; i++)
+            contents[i] = itemBuilder[new Random().nextInt(itemBuilder.length)].build();
+        return this;
+    }
+
+    public InventoryBuilder randomPattern(ItemStack... itemStacks) {
+        for (int i = 0; i < contents.length; i++)
+            contents[i] = itemStacks[new Random().nextInt(itemStacks.length)];
         return this;
     }
 

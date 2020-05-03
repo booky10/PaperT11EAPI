@@ -21,6 +21,7 @@ public class HeadBuilder {
     private HashMap<Enchantment, Integer> enchantments;
     private List<ItemFlag> itemFlags;
     private Integer customDataModel;
+    private List<String> lore;
     private UUID skinUUID;
 
     public HeadBuilder(int amount, String name) {
@@ -30,6 +31,7 @@ public class HeadBuilder {
         enchantments = new HashMap<>();
         itemFlags = new ArrayList<>();
         customDataModel = 0;
+        lore=new ArrayList<>();
         skinName = null;
         skinUUID = null;
         textureProperty = null;
@@ -182,6 +184,7 @@ public class HeadBuilder {
 
         itemMeta.setUnbreakable(unbreakable);
         itemMeta.setDisplayName(name);
+        itemMeta.setLore(lore);
         itemMeta.setCustomModelData(customDataModel);
         if (textureProperty != null) {
             GameProfile profile = new GameProfile(UUID.randomUUID(), null);
@@ -417,5 +420,29 @@ public class HeadBuilder {
 
     public static HeadBuilder getHeadItem(String key) {
         return getSkull(getHeadTexture(key));
+    }
+
+    public HeadBuilder setLore(String... lore){
+        return setLore(Arrays.asList(lore));
+    }
+
+    public HeadBuilder setLore(List<String> lore){
+        this.lore=lore;
+        return this;
+    }
+
+    public HeadBuilder clearLore(){
+        lore.clear();
+        return this;
+    }
+
+    public HeadBuilder addLoreLine(String line){
+        lore.add(line);
+        return this;
+    }
+
+    public HeadBuilder addLoreLines(String... lines){
+        lore.addAll(Arrays.asList(lines));
+        return this;
     }
 }

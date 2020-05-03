@@ -96,7 +96,7 @@ public abstract class CommandExecutor {
         for (Player player : Bukkit.getOnlinePlayers())
             if (!PlaceholderAPI.setPlaceholders(player, "%supervanish_isvanished%").equals("true"))
                 if (!player.hasMetadata("vanished"))
-                    names.add(player.getDisplayName());
+                    names.add(player.getName());
         return names;
     }
 

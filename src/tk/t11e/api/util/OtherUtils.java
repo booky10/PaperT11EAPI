@@ -1,16 +1,16 @@
 package tk.t11e.api.util;
 // Created by booky10 in PaperT11EAPI (19:27 26.02.20)
 
-import com.rylinaux.plugman.util.PluginUtil;
+import com.comphenix.packetwrapper.WrapperPlayServerBlockAction;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.sun.istack.internal.NotNull;
 import net.minecraft.server.v1_15_R1.ChatMessage;
 import net.minecraft.server.v1_15_R1.IChatBaseComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_15_R1.block.CraftChest;
 import org.bukkit.entity.Entity;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -75,11 +75,19 @@ public class OtherUtils {
         entity.setVelocity(vector);
     }
 
-    public <T> T[] toArray(List<T> a) {
+    @Deprecated
+    public static <T> T[] toArray(Collection<T> a) {
         //noinspection unchecked
         T[] b = (T[]) new Object[a.size()];
         a.toArray(b);
         return b;
+    }
+
+    public static <T> ArrayList<T> iterableToList(Iterable<T> iterable) {
+        ArrayList<T> list = new ArrayList<>();
+        for (T object : iterable)
+            list.add(object);
+        return list;
     }
 
     public static void changeChestTitle(Block chest, String name) {
@@ -100,5 +108,33 @@ public class OtherUtils {
             hashMap.put(keyList.get(i), valueList.get(i));
 
         return hashMap;
+    }
+
+    /*public static void playChestAction(Player player, Chest chest, boolean open) {
+        /*Location location = chest.getLocation();
+        World world = ((CraftWorld) location.getWorld()).getHandle();
+        BlockPosition position = new BlockPosition(location.getX(), location.getY(), location.getZ());
+        TileEntityChest tileChest = (TileEntityChest) world.getTileEntity(position);
+
+    }*/
+
+    //@SuppressWarnings("deprecation")
+    public static void changeChestState(Player player, Location location, boolean open) {
+        //player.playNote(location, (byte) 1, (byte) (open ? 1 : 0));
+        /*BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        PacketPlayOutBlockAction packet = new PacketPlayOutBlockAction(pos, Blocks.CHEST, 1, open ? 1 : 0);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);*/
+
+        BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        WrapperPlayServerBlockAction blockAction = new WrapperPlayServerBlockAction();
+        blockAction.setBlockType(location.getBlock().getType());
+        blockAction.setLocation(blockPosition);
+        blockAction.setByte1(1);
+        blockAction.setByte2(open ? 1 : 0);
+        blockAction.sendPacket(player);
+    }
+
+    public static <T> List<T> setToList(Set<T> set){
+        return new ArrayList<>(set);
     }
 }

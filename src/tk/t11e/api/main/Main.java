@@ -12,6 +12,7 @@ import org.inventivetalent.lightlevel.LightLevel;
 import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.commands.ClientCrash;
 import tk.t11e.api.commands.NPCCreator;
+import tk.t11e.api.commands.SetMaxHealth;
 import tk.t11e.api.listener.JoinLeaveListener;
 import tk.t11e.api.listener.TeleportListener;
 import tk.t11e.api.npc.InteractListener;
@@ -38,9 +39,10 @@ public class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new JoinLeaveListener(), this);
         Bukkit.getPluginManager().registerEvents(new TeleportListener(), this);
         Bukkit.getPluginManager().registerEvents(new InteractListener(), this);
+
         new NPCCreator().init();
         new ClientCrash().init();
-
+        new SetMaxHealth().init();
         new LightLevel().onEnable();
         new CustomSkins().onEnable();
 
