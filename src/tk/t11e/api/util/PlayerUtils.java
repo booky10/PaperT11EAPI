@@ -11,7 +11,7 @@ import java.util.List;
 public class PlayerUtils {
 
     public static List<String> getOnlinePlayerNames() {
-        List<String> names=new ArrayList<>();
+        List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers())
             names.add(player.getName());
         return names;
@@ -27,9 +27,8 @@ public class PlayerUtils {
             return completions;
 
         for (String entry : completions)
-            if (entry.startsWith(word)&& !entry.equals(word))
+            if (entry.startsWith(word) && !entry.equals(word))
                 list.add(entry);
-
         return list;
     }
 }

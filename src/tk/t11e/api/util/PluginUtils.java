@@ -12,11 +12,17 @@ public class PluginUtils {
     }
 
     public static void reloadPlugin(Plugin plugin) {
-        PluginUtil.reload(plugin);
+        if (VersionHelper.aboveOr110())
+            PluginUtil.reload(plugin);
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void reloadPlugins() {
-        PluginUtil.reloadAll();
+        if (VersionHelper.aboveOr110())
+            PluginUtil.reloadAll();
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void enablePlugin(String plugin) {
@@ -24,11 +30,17 @@ public class PluginUtils {
     }
 
     public static void enablePlugin(Plugin plugin) {
-        PluginUtil.enable(plugin);
+        if (VersionHelper.aboveOr110())
+            PluginUtil.enable(plugin);
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void enablePlugins() {
-        PluginUtil.enableAll();
+        if (VersionHelper.aboveOr110())
+            PluginUtil.enableAll();
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void disablePlugin(String plugin) {
@@ -36,15 +48,24 @@ public class PluginUtils {
     }
 
     public static void disablePlugin(Plugin plugin) {
-        PluginUtil.disable(plugin);
+        if (VersionHelper.aboveOr110())
+            PluginUtil.disable(plugin);
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void disablePlugins() {
-        PluginUtil.disableAll();
+        if (VersionHelper.aboveOr110())
+            PluginUtil.disableAll();
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void loadPlugin(String plugin) {
-        PluginUtil.load(plugin);
+        if (VersionHelper.aboveOr110())
+            PluginUtil.load(plugin);
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
     public static void unloadPlugin(String plugin) {
@@ -52,7 +73,10 @@ public class PluginUtils {
     }
 
     public static void unloadPlugin(Plugin plugin) {
-        PluginUtil.unload(plugin);
+        if (VersionHelper.aboveOr110())
+            PluginUtil.unload(plugin);
+        else
+            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
     }
 
 }

@@ -6,6 +6,6 @@ import org.bukkit.Bukkit;
 public class ExceptionUtils {
 
     public static void print(Exception exception) {
-        Bukkit.getConsoleSender().sendMessage("§e"+exception.toString());
+        Bukkit.getLogger().severe(exception.toString());
     }
 }

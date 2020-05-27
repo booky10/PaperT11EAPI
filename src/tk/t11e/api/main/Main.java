@@ -8,7 +8,6 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.inventivetalent.lightlevel.LightLevel;
 import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.commands.ClientCrash;
 import tk.t11e.api.commands.NPCCreator;
@@ -19,6 +18,7 @@ import tk.t11e.api.npc.InteractListener;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
 import tk.t11e.api.packets.PacketCore;
+import tk.t11e.api.util.VersionHelper;
 
 import java.io.File;
 import java.util.Objects;
@@ -26,29 +26,40 @@ import java.util.UUID;
 
 public class Main extends JavaPlugin {
 
-    public static final String PREFIX = "§7[§bT11E§7]§c ", NO_PERMISSION = PREFIX + "You don't have " +
+    public static final String PREFIX = "§7[§bCraftTMB§7]§c ", NO_PERMISSION = PREFIX + "You don't have " +
             "the permissions for this!";
     public static Main main;
 
     @Override
     public void onEnable() {
-        main = this;
+        if (!VersionHelper.aboveOr18()) {
+            getLogger().severe("");
+            getLogger().severe("|----------------------------------------|");
+            getLogger().severe("| This API only supports 1.8 up to 1.15! |");
+            getLogger().severe("|----------------------------------------|");
+            getLogger().severe("");
+            Bukkit.getPluginManager().disablePlugin(this);
+        } else {
+            main = this;
 
-        new PacketCore(this);
+            new PacketCore(this);
 
-        Bukkit.getPluginManager().registerEvents(new JoinLeaveListener(), this);
-        Bukkit.getPluginManager().registerEvents(new TeleportListener(), this);
-        Bukkit.getPluginManager().registerEvents(new InteractListener(), this);
+            Bukkit.getPluginManager().registerEvents(new JoinLeaveListener(), this);
+            Bukkit.getPluginManager().registerEvents(new TeleportListener(), this);
+            Bukkit.getPluginManager().registerEvents(new InteractListener(), this);
 
-        new NPCCreator().init();
-        new ClientCrash().init();
-        new SetMaxHealth().init();
-        new LightLevel().onEnable();
-        new CustomSkins().onEnable();
+            new NPCCreator().init();
+            new ClientCrash().init();
+            new SetMaxHealth().init();
 
-        Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        Bukkit.getScheduler().runTaskAsynchronously(this, NPCRegistry::make);
-        registerYaml();
+            new CustomSkins().onEnable();
+            /*if (VersionHelper.aboveOr113())
+                new LightLevel().onEnable();*/
+
+            Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+            Bukkit.getScheduler().runTaskAsynchronously(this, NPCRegistry::make);
+            registerYaml();
+        }
     }
 
     @Override

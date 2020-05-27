@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Arrays;
 import java.util.Random;
 
+@SuppressWarnings("UnusedReturnValue")
 public class InventoryBuilder {
 
     private Integer size;
@@ -79,7 +80,11 @@ public class InventoryBuilder {
 
     public InventoryBuilder addItem(ItemStack item) {
         for (int i = 0; i < contents.length; i++)
-            if (contents[i].getType() == Material.AIR || contents[i].getType() == Material.CAVE_AIR || contents[i].getType() == Material.VOID_AIR || contents[i] == null) {
+            if (contents[i].getType() == Material.AIR
+                    || contents[i] == null
+                    || (VersionHelper.aboveOr113()
+                    && (contents[i].getType() == Material.CAVE_AIR
+                    || contents[i].getType() == Material.VOID_AIR))) {
                 contents[i] = item;
                 break;
             }

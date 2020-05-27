@@ -17,6 +17,7 @@ import tk.t11e.api.main.Main;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
 import tk.t11e.api.util.ExceptionUtils;
+import tk.t11e.api.util.VersionHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +72,10 @@ public class NPCCreator extends CommandExecutor {
                             "/minecraft:teleport @s " + npc.getLocation().getX() + " " + npc.getLocation().getY()
                                     + " " + npc.getLocation().getZ() + " " + npc.getLocation().getYaw() + " " + npc.getLocation()
                                     .getPitch()));
-                    player.sendMessage(message);
+                    if (VersionHelper.isPaper() && VersionHelper.aboveOr18())
+                        player.sendMessage(message);
+                    else
+                        player.sendMessage(message.getText());
                 }
                 player.sendMessage("§e--------§6[NPCs]§e--------");
             } else

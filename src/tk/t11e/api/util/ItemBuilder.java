@@ -10,6 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
+@SuppressWarnings("UnusedReturnValue")
 public class ItemBuilder {
 
     private Material material;
@@ -33,7 +34,7 @@ public class ItemBuilder {
     }
 
     public ItemBuilder(Material material, int amount) {
-        this(material, amount, "§f" + material.getKey().getKey().replace('_', ' '));
+        this(material, amount, "§f" + material.name().toLowerCase().replace('_', ' '));
     }
 
     public ItemBuilder(Material material) {
@@ -51,19 +52,23 @@ public class ItemBuilder {
 
     public static ItemBuilder fromItemStack(@NotNull ItemStack from) {
         ItemBuilder builder = new ItemBuilder(from.getType(), from.getAmount(), getRealDisplayName(from));
-        builder.setUnbreakable(from.getItemMeta().isUnbreakable());
+        if (VersionHelper.aboveOr111())
+            builder.setUnbreakable(from.getItemMeta().isUnbreakable());
         builder.setEnchantments(from.getEnchantments());
-        builder.setItemFlags(OtherUtils.setToList(from.getItemFlags()));
-        builder.setLore(from.getLore());
-        builder.setCustomDataModel(from.getItemMeta().getCustomModelData());
+        builder.setItemFlags(OtherUtils.setToList(from.getItemMeta().getItemFlags()));
+        builder.setLore(from.getItemMeta().getLore());
+        if (VersionHelper.aboveOr114())
+            builder.setCustomDataModel(from.getItemMeta().getCustomModelData());
         return builder;
     }
 
     public static String getRealDisplayName(ItemStack item) {
         if (item.getItemMeta().hasDisplayName())
             return item.getItemMeta().getDisplayName();
-        else
+        else if (VersionHelper.isPaper() && VersionHelper.aboveOr112())
             return item.getI18NDisplayName();
+        else
+            return item.getType().name().toLowerCase().replace('_', ' ');
     }
 
     public ItemBuilder addAllItemFlags() {
@@ -178,20 +183,25 @@ public class ItemBuilder {
 
     public ItemStack build() {
         ItemStack itemStack = new ItemStack(material, amount);
-        if (material != Material.AIR && material != Material.CAVE_AIR && material != Material.VOID_AIR) {
-            ItemMeta itemMeta = itemStack.getItemMeta();
+        if (material != Material.AIR)
+            if (VersionHelper.aboveOr113() && (material == Material.CAVE_AIR || material == Material.VOID_AIR))
+                return itemStack.clone();
+            else {
+                ItemMeta itemMeta = itemStack.getItemMeta();
 
-            itemMeta.setUnbreakable(unbreakable);
-            itemMeta.setDisplayName(name);
-            itemMeta.setCustomModelData(customDataModel);
-            itemMeta.setLore(lore);
-            for (ItemFlag itemFlag : itemFlags)
-                itemMeta.addItemFlags(itemFlag);
+                if (VersionHelper.aboveOr111())
+                    itemMeta.setUnbreakable(unbreakable);
+                itemMeta.setDisplayName(name);
+                if (VersionHelper.aboveOr114())
+                    itemMeta.setCustomModelData(customDataModel);
+                itemMeta.setLore(lore);
+                for (ItemFlag itemFlag : itemFlags)
+                    itemMeta.addItemFlags(itemFlag);
 
-            itemStack.setItemMeta(itemMeta);
-            for (Enchantment enchantment : enchantments.keySet())
-                itemStack.addUnsafeEnchantment(enchantment, enchantments.get(enchantment));
-        }
-        return itemStack.clone().clone().clone().clone().clone();
+                itemStack.setItemMeta(itemMeta);
+                for (Enchantment enchantment : enchantments.keySet())
+                    itemStack.addUnsafeEnchantment(enchantment, enchantments.get(enchantment));
+            }
+        return itemStack.clone();
     }
 }

@@ -6,12 +6,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -68,15 +66,11 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
         nickNamerEnabled = Bukkit.getPluginManager().isPluginEnabled("NickNamer");
 
-        if (cacheDirectory.exists()) {
-            long size = FileUtils.sizeOfDirectory(cacheDirectory);
-            try {
-                FileUtils.deleteDirectory(cacheDirectory);// Delete old cache
-                Main.main.getLogger().info("Deleted old cached skins (" + (size / 1024) + "kB).");
-            } catch (IOException exception) {
-                Main.main.getLogger().severe("Failed to delete skin cache: " + exception);
-            }
-        }
+        if (cacheDirectory.exists())
+            if (cacheDirectory.delete())
+                Main.main.getLogger().info("Deleted old cached skins.");
+            else
+                Main.main.getLogger().severe("Failed to delete skin cache!");
         cacheDirectory.mkdirs();
     }
 
@@ -122,13 +116,13 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             final String finalFilter = filter;
             connectionExecutor.execute(() -> {
                 try {
-					URL galleryUrl = new URL("http://api.mineskin.org/get/list/" + finalPage + "?size=" + galleryPageSize + (finalFilter != null ? "&filter=" + finalFilter : ""));
-					URLConnection galleryConnection = galleryUrl.openConnection();
-					galleryConnection.setRequestProperty("User-Agent", "MineskinGallery/1.0.0-SNAPSHOT");
-					galleryConnection.connect();
-					InputStreamReader inputStream=new InputStreamReader(galleryConnection.getInputStream());
-					JsonElement galleryElement =new JsonParser().parse(inputStream);
-					JsonObject galleryObject = galleryElement.getAsJsonObject();
+                    URL galleryUrl = new URL("http://api.mineskin.org/get/list/" + finalPage + "?size=" + galleryPageSize + (finalFilter != null ? "&filter=" + finalFilter : ""));
+                    URLConnection galleryConnection = galleryUrl.openConnection();
+                    galleryConnection.setRequestProperty("User-Agent", "MineskinGallery/1.0.0-SNAPSHOT");
+                    galleryConnection.connect();
+                    InputStreamReader inputStream = new InputStreamReader(galleryConnection.getInputStream());
+                    JsonElement galleryElement = new JsonParser().parse(inputStream);
+                    JsonObject galleryObject = galleryElement.getAsJsonObject();
 
                     ((Player) sender).openInventory(inventory);
 
@@ -249,7 +243,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             }
 
             mineskinClient.generateUrl(args[1], SkinOptions.create(name, Model.DEFAULT, isPrivate ?
-					Visibility.PRIVATE : Visibility.PUBLIC), new SkinCallback() {
+                    Visibility.PRIVATE : Visibility.PUBLIC), new SkinCallback() {
 
                 @Override
                 public void waiting(long l) {
@@ -312,10 +306,10 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 URL skinUrl = new URL("http://api.mineskin.org/get/id/" + id);
                 HttpURLConnection skinConnection = (HttpURLConnection) skinUrl.openConnection();
                 skinConnection.setRequestProperty("User-Agent",
-						"MineskinGallery/" + Main.main.getDescription().getVersion());
+                        "MineskinGallery/" + Main.main.getDescription().getVersion());
                 if (skinConnection.getResponseCode() == 200) {
                     JsonObject skinObject =
-							new JsonParser().parse(new InputStreamReader(skinConnection.getInputStream())).getAsJsonObject();
+                            new JsonParser().parse(new InputStreamReader(skinConnection.getInputStream())).getAsJsonObject();
 
                     if (enableCache) {
                         cachedFile.createNewFile();
@@ -332,7 +326,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             }
         }
         throw new RuntimeException("No cached version of skin #" + id + " available and failed to connect to " +
-				"mineskin.org");
+                "mineskin.org");
     }
 
     @EventHandler
@@ -356,17 +350,17 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     }
                     if ("§bPrevious page".equals(itemStack.getItemMeta().getDisplayName())) {
                         String page =
-								Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).split("/")[0];
+                                Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).split("/")[0];
                         event.getWhoClicked().closeInventory();
                         ((Player) event.getWhoClicked()).chat("/mineskin gallery " + page + " " + filter);
                     } else if ("§bNext page".equals(itemStack.getItemMeta().getDisplayName())) {
                         String page =
-								Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).split("/")[0];
+                                Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).split("/")[0];
                         event.getWhoClicked().closeInventory();
                         ((Player) event.getWhoClicked()).chat("/mineskin gallery " + page + " " + filter);
                     } else {
                         int skinId =
-								Integer.parseInt(Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).substring(1));
+                                Integer.parseInt(Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).substring(1));
                         event.getWhoClicked().closeInventory();
                         ((Player) event.getWhoClicked()).chat("/mineskin view " + skinId);
                     }
@@ -378,7 +372,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     itemStack.getItemMeta().getDisplayName();
                     ItemStack skullItem = Objects.requireNonNull(event.getClickedInventory().getItem(13)).clone();
                     int skinId =
-							Integer.parseInt(Objects.requireNonNull(skullItem.getItemMeta().getLore()).get(0).substring(1));
+                            Integer.parseInt(Objects.requireNonNull(skullItem.getItemMeta().getLore()).get(0).substring(1));
                     if ("§bAdd to your inventory".equals(itemStack.getItemMeta().getDisplayName())) {
                         if (!event.getWhoClicked().hasPermission("mineskin.give.item")) {
                             event.getWhoClicked().sendMessage(Main.NO_PERMISSION);
@@ -402,15 +396,15 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         }
                         JsonObject skinObject = getFromCacheOrDownload(skinId);
                         JsonObject texture =
-								skinObject.get("data").getAsJsonObject().get("texture").getAsJsonObject();
+                                skinObject.get("data").getAsJsonObject().get("texture").getAsJsonObject();
 
                         NickNamerAPI.getNickManager().loadCustomSkin("MineSkinGallery-" + skinId,
-								Objects.requireNonNull(HeadTextureChanger.createProfile(texture.get("value").getAsString(), texture.get("signature").getAsString())));
+                                Objects.requireNonNull(HeadTextureChanger.createProfile(texture.get("value").getAsString(), texture.get("signature").getAsString())));
                         NickNamerAPI.getNickManager().setCustomSkin(event.getWhoClicked().getUniqueId(),
-								"MineSkinGallery-" + skinId);
+                                "MineSkinGallery-" + skinId);
                     } else if ("§bShow online".equals(itemStack.getItemMeta().getDisplayName())) {
                         event.getWhoClicked().sendMessage(Main.PREFIX + "§aClick here to view this skin on the " +
-								"MineSkin" +
+                                "MineSkin" +
                                 " website: §lhttps://mineskin.org/" + skinId);
                         event.getWhoClicked().closeInventory();
                     } else if ("§bGo back".equalsIgnoreCase(itemStack.getItemMeta().getDisplayName())) {
@@ -440,7 +434,12 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
     ItemStack makeSkull(int id, JsonObject skinObject) throws Exception {
         JsonObject textureObject = skinObject.get("data").getAsJsonObject().get("texture").getAsJsonObject();
 
-        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
+        ItemStack itemStack;
+        try {
+            itemStack = new ItemStack(Material.PLAYER_HEAD);
+        } catch (Exception exception) {
+            itemStack = new ItemStack(Material.valueOf("SKULL"), 1, (short) 3);
+        }
         SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
         skullMeta.setOwner("MHF_MineSkin");
         skullMeta.setDisplayName(skinObject.get("name").getAsString().isEmpty() ? ("#" + id) : skinObject.get("name").getAsString());
@@ -459,7 +458,9 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             return;
         }
 
-        Inventory inventory = Bukkit.createInventory(null, 9 * 6, inventoryViewPrefix + (skinObject.get("name").getAsString().isEmpty() ? ("#" + id) : skinObject.get("name").getAsString()));
+        Inventory inventory = Bukkit.createInventory(null, 9 * 6,
+                inventoryViewPrefix + (skinObject.get("name").getAsString().isEmpty() ? ("#" + id)
+                        : skinObject.get("name").getAsString()));
 
         ItemStack skullItem = null;
         try {
@@ -471,8 +472,14 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         inventory.setItem(13, skullItem);
 
         {
-            ItemStack viewsItem = new ItemStack(skinObject.get("private").getAsBoolean() ? Material.ENDER_EYE :
-                    Material.ENDER_PEARL, 1);
+            ItemStack viewsItem;
+            try {
+                viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
+                        ? Material.ENDER_EYE : Material.ENDER_PEARL);
+            } catch (Exception exception) {
+                viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
+                        ? Material.valueOf("EYE_OF_ENDER") : Material.ENDER_PEARL);
+            }
             ItemMeta viewsMeta = viewsItem.getItemMeta();
             viewsMeta.setDisplayName("§7" + skinObject.get("views").getAsInt() + " §8views");
             viewsMeta.setLore(Collections.singletonList("§8" + (skinObject.get("private").getAsBoolean() ? "private" : "public")));
@@ -489,10 +496,15 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         }
 
         {
-            ItemStack setAsHeadItem = new ItemStack(Material.PLAYER_HEAD, 1);
+            ItemStack setAsHeadItem;
+            try {
+                setAsHeadItem = new ItemStack(Material.PLAYER_HEAD);
+            } catch (Exception exception) {
+                setAsHeadItem = new ItemStack(Material.valueOf("SKULL"), 1, (short) 3);
+            }
             ItemMeta setAsHeadMeta = setAsHeadItem.getItemMeta();
             setAsHeadMeta.setDisplayName("§bSet as your own head");
-            ((SkullMeta) setAsHeadMeta).setOwningPlayer((OfflinePlayer) player);
+            ((SkullMeta) setAsHeadMeta).setOwner(player.getName());
             setAsHeadItem.setItemMeta(setAsHeadMeta);
             inventory.setItem(29, setAsHeadItem);
         }

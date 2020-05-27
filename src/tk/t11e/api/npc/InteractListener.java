@@ -12,13 +12,13 @@ import java.util.UUID;
 
 public class InteractListener implements Listener {
 
-    public static HashMap<UUID, Long> timeout = new HashMap<>();
+    public static final HashMap<UUID, Long> timeout = new HashMap<>();
 
     @EventHandler
     public void onPacketInteract(PacketUseEntityEventID event) {
         Player player = event.getAttacker();
         for (NPC npc : NPCRegistry.getNPCs())
-            if (npc.getEntity().getId() == event.getId())
+            if (npc.getEntityID().equals(event.getId()))
                 if (!(npc.getAction() == null || npc.getAction().equals(NPC.Action.NOTHING)))
                     switch (npc.getAction()) {
                         case EXECUTE_COMMAND:

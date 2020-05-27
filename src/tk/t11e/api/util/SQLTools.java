@@ -26,14 +26,13 @@ public class SQLTools {
 
     public void initConnection() {
         try {
-            //synchronized (this) {
-                if (connection != null && !connection.isClosed())
-                    return;
+            if (connection != null && !connection.isClosed())
+                return;
+            Class.forName("com.mysql.jdbc.Driver");
 
-                Class.forName("com.mysql.jdbc.Driver");
-                this.connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" +
-                        this.port + "/" + this.database, this.username, this.password);
-            //}
+            String flags = "?autoReconnect=true&useSSL=false";
+            this.connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" +
+                    this.port + "/" + this.database + flags, this.username, this.password);
         } catch (SQLException | ClassNotFoundException exception) {
             ExceptionUtils.print(exception);
         }
@@ -61,7 +60,7 @@ public class SQLTools {
 
     public Connection getConnection() {
         try {
-            if (connection == null||connection.isClosed())
+            if (connection == null || connection.isClosed())
                 initConnection();
             return connection;
         } catch (SQLException exception) {

@@ -29,7 +29,12 @@ public class InventoryUtils {
     }
 
     public static ItemStack getNullItem() {
-        ItemStack itemStack = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
+        ItemStack itemStack;
+        try {
+            itemStack = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
+        } catch (Exception exception) {
+            itemStack = new ItemStack(Material.valueOf("STAINED_GLASS_PANE"), 1, (short) 8);
+        }
         ItemMeta itemMeta = itemStack.getItemMeta();
 
         itemMeta.setDisplayName("");

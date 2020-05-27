@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class BungeeUtils {
 
-    public static void sendPlayerToServer(Player player,String server) {
+    public static void sendPlayerToServer(Player player, String server) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream outputStream = new DataOutputStream(byteArrayOutputStream);
 
@@ -21,6 +21,6 @@ public class BungeeUtils {
             System.out.println(exception.getMessage());
         }
 
-        player.sendPluginMessage(Main.main, "BungeeCord",byteArrayOutputStream.toByteArray());
+        player.sendPluginMessage(Main.main, "BungeeCord", byteArrayOutputStream.toByteArray());
     }
 }

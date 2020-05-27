@@ -5,20 +5,21 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.mineskin.MineskinClient;
 import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.main.Main;
+import tk.t11e.api.util.VersionHelper;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.UUID;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -31,11 +32,31 @@ public class NPC {
     private Action action;
     private final Property property;
 
-    private EntityPlayer entity;
-    private final MinecraftServer server;
-    private final WorldServer world;
+    private Object entity = null;
+    private Object server = null;
+    private Object world = null;
     private GameProfile profile;
     private Player npc;
+
+    private final Class<?> craftPlayerClass = VersionHelper.getOBCClass("entity.CraftPlayer");
+    private final Class<?> entityPlayerClass = VersionHelper.getNMSClass("EntityPlayer");
+    private final Class<?> entityHumanClass = VersionHelper.getNMSClass("EntityHuman");
+    private final Class<?> entityClass = VersionHelper.getNMSClass("Entity");
+    private final Class<?> minecraftServerClass = VersionHelper.getNMSClass("MinecraftServer");
+    private final Class<?> worldServerClass = VersionHelper.getNMSClass("WorldServer");
+    private final Class<?> playerInteractManagerClass = VersionHelper.getNMSClass("PlayerInteractManager");
+    private final Class<?> playerConnectionClass = VersionHelper.getNMSClass("PlayerConnection");
+    private final Class<?> packetClass = VersionHelper.getNMSClass("Packet");
+    private final Class<?> playerInfoPacketClass = VersionHelper.getNMSClass("PacketPlayOutPlayerInfo");
+    private final Class<?> playerInfoEnumClass = VersionHelper.getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
+    private final Class<?> entityDestroyPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityDestroy");
+    private final Class<?> entitySpawnPacketClass = VersionHelper.getNMSClass("PacketPlayOutNamedEntitySpawn");
+    private final Class<?> headRotationPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityHeadRotation");
+    private final Class<?> dataWatcherClass = VersionHelper.getNMSClass("DataWatcher");
+    private final Class<?> dataWatcherObjectClass = VersionHelper.getNMSClass("DataWatcherObject");
+    private final Class<?> dataWatcherRegistryClass = VersionHelper.getNMSClass("DataWatcherRegistry");
+    private final Class<?> dataWatcherSerializerClass = VersionHelper.getNMSClass("DataWatcherSerializer");
+    private final Class<?> entityMetadataPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityMetadata");
 
     public NPC(String name, Location location) {
         this(name, name, name, false, location,
@@ -64,19 +85,24 @@ public class NPC {
         this.actionString = "";
         this.property = property;
 
-        server = ((CraftServer) Bukkit.getServer()).getServer();
-        world = ((CraftWorld) location.getWorld()).getHandle();
+        try {
+            Class<?> craftServerClass = VersionHelper.getOBCClass("CraftServer");
+            server = craftServerClass.getMethod("getServer").invoke(craftServerClass.cast(Bukkit.getServer()));
+            Class<?> craftWorldClass = VersionHelper.getOBCClass("CraftWorld");
+            world = craftWorldClass.getMethod("getHandle").invoke(craftWorldClass.cast(location.getWorld()));
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException exception) {
+            exception.printStackTrace();
+        }
         MineskinClient mineskinClient = new MineskinClient();
 
-        Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
-            try {
-                updateNPC();
-                Thread.sleep(15 * 1000);
-            } catch (InterruptedException ignored) {
-            } finally {
-                NPCRegistry.register(this);
-            }
-        });
+        try {
+            sendPackets();
+            updateNPC();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        } finally {
+            NPCRegistry.register(this);
+        }
     }
 
     public NPC updateNPC() {
@@ -108,11 +134,34 @@ public class NPC {
             profile.getProperties().put(property.getName(), property);
         }
 
-        entity = new EntityPlayer(server, world, profile, new PlayerInteractManager(world));
-        npc = entity.getBukkitEntity().getPlayer();
+        try {
+            entity = entityPlayerClass.getConstructor(minecraftServerClass, worldServerClass, GameProfile.class,
+                    playerInteractManagerClass).newInstance(server, world, profile, playerInteractManagerClass
+                    .getConstructor(worldServerClass).newInstance(world));
 
-        entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(),
-                location.getPitch());
+            Object watcher = entityPlayerClass.getMethod("getDataWatcher").invoke(entity);
+            Method watcherSet = null;
+            for (Method method : dataWatcherClass.getMethods())
+                if (method.getName().endsWith("set"))
+                    watcherSet = method;
+            if (watcherSet == null)
+                throw new NoSuchMethodException("Method not found!");
+            Object watcherObject = dataWatcherObjectClass.getConstructor(int.class,
+                    dataWatcherSerializerClass).newInstance(16, dataWatcherRegistryClass
+                    .getField("a").get(null));
+            watcherSet.invoke(watcher, watcherObject, (byte) 127);
+
+            npc = (Player) craftPlayerClass.getMethod("getPlayer").invoke(entityPlayerClass
+                    .getMethod("getBukkitEntity").invoke(entity));
+
+            entityPlayerClass.getMethod("setLocation", double.class, double.class, double.class, float.class,
+                    float.class).invoke(entity, location.getX(), location.getY(), location.getZ(), location.getYaw(),
+                    location.getPitch());
+        } catch (InstantiationException | IllegalAccessException
+                | InvocationTargetException | NoSuchMethodException
+                | NoSuchFieldException exception) {
+            exception.printStackTrace();
+        }
         return this;
     }
 
@@ -125,10 +174,30 @@ public class NPC {
         return this;
     }
 
+    public Integer getEntityID() {
+        if (entity != null)
+            try {
+                return (int) entityClass.getMethod("getId").invoke(entity);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException exception) {
+                exception.printStackTrace();
+            }
+        return 0;
+    }
+
     public NPC removeFromTabList(Player player) {
-        PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
-        connection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction
-                .REMOVE_PLAYER, entity));
+        try {
+            Object connection = entityPlayerClass.getField("playerConnection").get(craftPlayerClass
+                    .getMethod("getHandle").invoke(craftPlayerClass.cast(player)));
+
+            Object playerInfoPacket = playerInfoPacketClass.getConstructor(playerInfoEnumClass,
+                    Iterable.class).newInstance(playerInfoEnumClass.getEnumConstants()[4],
+                    Collections.singletonList(entity));
+
+            playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, playerInfoPacket);
+        } catch (IllegalAccessException | NoSuchMethodException | InstantiationException
+                | InvocationTargetException | NoSuchFieldException exception) {
+            exception.printStackTrace();
+        }
         return this;
     }
 
@@ -158,12 +227,35 @@ public class NPC {
         remove(player);
 
         if (entity != null) {
-            PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
-            connection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction
-                    .ADD_PLAYER, entity));
-            connection.sendPacket(new PacketPlayOutNamedEntitySpawn(entity));
-            connection.sendPacket(new PacketPlayOutEntityHeadRotation(entity, (byte) (location.getYaw() * 256 /
-                    360)));
+            Object connection = getPlayerConnection(player);
+
+            try {
+                Object playerInfoPacket = playerInfoPacketClass.getConstructor(playerInfoEnumClass,
+                        Iterable.class).newInstance(playerInfoEnumClass.getEnumConstants()[0],
+                        Collections.singletonList(entity));
+                Object entitySpawnPacket = entitySpawnPacketClass.getConstructor(entityHumanClass)
+                        .newInstance(entity);
+                Object headRotationPacket = headRotationPacketClass.getConstructor(entityClass,
+                        byte.class).newInstance(entity, (byte) (location.getYaw() * 256 / 360));
+
+                Object watcher = entityPlayerClass.getMethod("getDataWatcher").invoke(entity);
+
+                Constructor<?> constructor = entityMetadataPacketClass.getConstructor(int.class,
+                        dataWatcherClass, boolean.class);
+                Object entityMetadataPacket = constructor.newInstance(getEntityID(), watcher, true);
+
+                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, playerInfoPacket);
+                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, entitySpawnPacket);
+                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, headRotationPacket);
+                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, entityMetadataPacket);
+            } catch (IllegalAccessException | InvocationTargetException
+                    | NoSuchMethodException | InstantiationException exception) {
+                exception.printStackTrace();
+            }
+
+            /*DataWatcher watcher = entity.getDataWatcher();
+            watcher.set(new DataWatcherObject<>(15, DataWatcherRegistry.a), (byte) 127);
+            connection.sendPacket(new PacketPlayOutEntityMetadata(entity.getId(), watcher, true));*/
 
             if (!showInTabList)
                 Bukkit.getScheduler().runTaskLaterAsynchronously(Main.main, () ->
@@ -173,21 +265,40 @@ public class NPC {
         return this;
     }
 
+    private Object getPlayerConnection(Player player) {
+        try {
+            return entityPlayerClass.getField("playerConnection").get(craftPlayerClass
+                    .getMethod("getHandle").invoke(craftPlayerClass.cast(player)));
+        } catch (IllegalAccessException | NoSuchFieldException
+                | InvocationTargetException | NoSuchMethodException exception) {
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
     public NPC remove(Player player) {
         try {
-            PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
             if (showInTabList)
-                connection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction
-                        .REMOVE_PLAYER, entity));
-            connection.sendPacket(new PacketPlayOutEntityDestroy(entity.getId()));
+                removeFromTabList();
+
+            Object connection = getPlayerConnection(player);
+            Constructor<?> packetConstructor = entityDestroyPacketClass.getConstructor(int[].class);
+            //int id = (int) entityClass.getMethod("getId").invoke(entity);
+            Object packet = packetConstructor.newInstance((Object) new int[]{getEntityID()});
+
+            playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, packet);
         } catch (NullPointerException ignored) {
+        } catch (IllegalAccessException | InstantiationException
+                | NoSuchMethodException | InvocationTargetException exception) {
+            exception.printStackTrace();
         }
         return this;
     }
 
     public NPC remove(Iterable<? extends Player> players) {
-        for (Player player : players)
-            remove(player);
+        if (players != null)
+            for (Player player : players)
+                remove(player);
         return this;
     }
 
@@ -195,10 +306,6 @@ public class NPC {
         remove(Bukkit.getOnlinePlayers());
         NPCRegistry.unregister(this);
         return this;
-    }
-
-    public EntityPlayer getEntity() {
-        return entity;
     }
 
     public GameProfile getProfile() {

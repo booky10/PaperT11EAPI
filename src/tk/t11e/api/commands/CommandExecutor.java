@@ -1,7 +1,6 @@
 package tk.t11e.api.commands;
 // Created by booky10 in BungeeT11E (19:07 03.02.20)
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -9,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.inventivetalent.nicknamer.api.NickNamerAPI;
 import tk.t11e.api.main.Main;
 
 import java.util.*;
@@ -94,9 +94,11 @@ public abstract class CommandExecutor {
     public List<String> getOnlinePlayerNames() {
         List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers())
-            if (!PlaceholderAPI.setPlaceholders(player, "%supervanish_isvanished%").equals("true"))
-                if (!player.hasMetadata("vanished"))
+            if (!player.hasMetadata("vanished"))
+                if (!NickNamerAPI.getNickManager().isNicked(player.getUniqueId()))
                     names.add(player.getName());
+                else
+                    names.add(NickNamerAPI.getNickManager().getNick(player.getUniqueId()));
         return names;
     }
 

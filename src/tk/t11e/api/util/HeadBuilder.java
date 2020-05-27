@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.lang.reflect.Field;
 import java.util.*;
 
+@SuppressWarnings({"SpellCheckingInspection", "UnusedReturnValue"})
 public class HeadBuilder {
 
     private int amount;
@@ -31,7 +32,7 @@ public class HeadBuilder {
         enchantments = new HashMap<>();
         itemFlags = new ArrayList<>();
         customDataModel = 0;
-        lore=new ArrayList<>();
+        lore = new ArrayList<>();
         skinName = null;
         skinUUID = null;
         textureProperty = null;
@@ -179,13 +180,20 @@ public class HeadBuilder {
 
     @SuppressWarnings("deprecation")
     public ItemStack build() {
-        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD, amount);
+        ItemStack itemStack;
+        try {
+            itemStack = new ItemStack(Material.PLAYER_HEAD, amount);
+        } catch (Exception exception) {
+            itemStack = new ItemStack(Material.valueOf("SKULL"), amount, (short) 3);
+        }
         SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
 
-        itemMeta.setUnbreakable(unbreakable);
+        if (VersionHelper.aboveOr111())
+            itemMeta.setUnbreakable(unbreakable);
         itemMeta.setDisplayName(name);
         itemMeta.setLore(lore);
-        itemMeta.setCustomModelData(customDataModel);
+        if (VersionHelper.aboveOr114())
+            itemMeta.setCustomModelData(customDataModel);
         if (textureProperty != null) {
             GameProfile profile = new GameProfile(UUID.randomUUID(), null);
 
@@ -199,8 +207,10 @@ public class HeadBuilder {
                 Bukkit.getLogger().severe("Error during loading a player head!");
                 Bukkit.getLogger().severe(exception.toString());
             }
-        } else if (skinUUID != null)
+        } else if (skinUUID != null && VersionHelper.aboveOr112())
             itemMeta.setOwningPlayer(Bukkit.getOfflinePlayer(skinUUID));
+        else if (skinUUID != null)
+            itemMeta.setOwner(UUIDFetcher.getName(skinUUID));
         else if (skinName != null)
             itemMeta.setOwner(skinName);
 
@@ -422,26 +432,26 @@ public class HeadBuilder {
         return getSkull(getHeadTexture(key));
     }
 
-    public HeadBuilder setLore(String... lore){
+    public HeadBuilder setLore(String... lore) {
         return setLore(Arrays.asList(lore));
     }
 
-    public HeadBuilder setLore(List<String> lore){
-        this.lore=lore;
+    public HeadBuilder setLore(List<String> lore) {
+        this.lore = lore;
         return this;
     }
 
-    public HeadBuilder clearLore(){
+    public HeadBuilder clearLore() {
         lore.clear();
         return this;
     }
 
-    public HeadBuilder addLoreLine(String line){
+    public HeadBuilder addLoreLine(String line) {
         lore.add(line);
         return this;
     }
 
-    public HeadBuilder addLoreLines(String... lines){
+    public HeadBuilder addLoreLines(String... lines) {
         lore.addAll(Arrays.asList(lines));
         return this;
     }

@@ -42,9 +42,8 @@ public class UUIDFetcher {
 
     public static UUID getUUIDAt(String name, long timestamp) {
         name = name.toLowerCase();
-        if (uuidCache.containsKey(name)) {
+        if (uuidCache.containsKey(name))
             return uuidCache.get(name);
-        }
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(String.format(UUID_URL, name, timestamp / 1000))
                     .openConnection();
@@ -55,7 +54,7 @@ public class UUIDFetcher {
             uuidCache.put(name, data.id);
             nameCache.put(data.id, data.name);
             return data.id;
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             return null;
         }
     }
@@ -65,9 +64,8 @@ public class UUIDFetcher {
     }
 
     public static String getName(UUID uuid) {
-        if (nameCache.containsKey(uuid)) {
+        if (nameCache.containsKey(uuid))
             return nameCache.get(uuid);
-        }
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(
                     String.format(NAME_URL, UUIDTypeAdapter.fromUUID(uuid))).openConnection();
@@ -78,7 +76,7 @@ public class UUIDFetcher {
             uuidCache.put(currentNameData.name.toLowerCase(), uuid);
             nameCache.put(uuid, currentNameData.name);
             return currentNameData.name;
-        } catch (Exception ex) {
+        } catch (Exception exception) {
             return null;
         }
     }

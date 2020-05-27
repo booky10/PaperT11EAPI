@@ -4,11 +4,9 @@ package tk.t11e.api.util;
 import com.comphenix.packetwrapper.WrapperPlayServerBlockAction;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.sun.istack.internal.NotNull;
-import net.minecraft.server.v1_15_R1.ChatMessage;
-import net.minecraft.server.v1_15_R1.IChatBaseComponent;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_15_R1.block.CraftChest;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -27,7 +25,11 @@ public class OtherUtils {
     }
 
     public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
-        return getKeysByValue(map, value).iterator().next();
+        Set<T> keys = getKeysByValue(map, value);
+        if (keys.iterator().hasNext())
+            return keys.iterator().next();
+        else
+            return null;
     }
 
     public static void move(Entity entity, Location location) {
@@ -91,10 +93,12 @@ public class OtherUtils {
     }
 
     public static void changeChestTitle(Block chest, String name) {
-        if (!(chest.getState() instanceof CraftChest)) return;
-        CraftChest craftChest = (CraftChest) chest.getState();
-        IChatBaseComponent iName = new ChatMessage(name);
-        craftChest.getTileEntity().setCustomName(iName);
+        if (!VersionHelper.aboveOr111())
+            throw new IllegalStateException("Chest Title change only allowed in 1.11+!");
+        if (!(chest.getState() instanceof Chest)) return;
+
+        Chest chestState = (Chest) chest.getState();
+        chestState.setCustomName("My Chest Inventory Title!");
     }
 
     @NotNull
@@ -134,7 +138,7 @@ public class OtherUtils {
         blockAction.sendPacket(player);
     }
 
-    public static <T> List<T> setToList(Set<T> set){
+    public static <T> List<T> setToList(Set<T> set) {
         return new ArrayList<>(set);
     }
 }

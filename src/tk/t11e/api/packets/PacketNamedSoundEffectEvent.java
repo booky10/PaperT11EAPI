@@ -16,12 +16,13 @@ public class PacketNamedSoundEffectEvent extends PlayerEvent implements Cancella
     public PacketNamedSoundEffectEvent(Player player, Sound sound) {
         super(player);
         this.cancelled = false;
-        this.sound=sound;
+        this.sound = sound;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public HandlerList getHandlers() {
-        return null;
+        return new HandlerList();
     }
 
     @Override
@@ -39,6 +40,6 @@ public class PacketNamedSoundEffectEvent extends PlayerEvent implements Cancella
 
     @Override
     public void setCancelled(boolean cancelled) {
-        this.cancelled=cancelled;
+        this.cancelled = cancelled;
     }
 }

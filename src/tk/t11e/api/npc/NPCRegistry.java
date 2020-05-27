@@ -36,8 +36,8 @@ public class NPCRegistry {
                 Bukkit.getScheduler().runTaskAsynchronously(Main.main, (Runnable) npc::sendPackets);
                 try {
                     Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (InterruptedException exception) {
+                    exception.printStackTrace();
                 }
             }
         });
@@ -50,13 +50,15 @@ public class NPCRegistry {
     }
 
     public static void unregister(NPC npc) {
-        if (NPCs == null)
+        if (NPCs == null) {
             NPCs = new ArrayList<>();
+            return;
+        }
         NPCs.remove(npc);
         try {
             Thread.sleep(250);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException exception) {
+            exception.printStackTrace();
         }
     }
 }
