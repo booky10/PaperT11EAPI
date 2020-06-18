@@ -2,7 +2,7 @@ package tk.t11e.api.util;
 // Created by booky10 in PaperT11EAPI (17:48 26.02.20)
 
 import org.bukkit.entity.Player;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -21,6 +21,6 @@ public class BungeeUtils {
             System.out.println(exception.getMessage());
         }
 
-        player.sendPluginMessage(Main.main, "BungeeCord", byteArrayOutputStream.toByteArray());
+        player.sendPluginMessage(PaperT11EAPIMain.main, "BungeeCord", byteArrayOutputStream.toByteArray());
     }
 }

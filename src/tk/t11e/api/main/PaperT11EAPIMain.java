@@ -7,11 +7,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.commands.ClientCrash;
 import tk.t11e.api.commands.NPCCreator;
 import tk.t11e.api.commands.SetMaxHealth;
+import tk.t11e.api.events.EventListener;
 import tk.t11e.api.listener.JoinLeaveListener;
 import tk.t11e.api.listener.TeleportListener;
 import tk.t11e.api.npc.InteractListener;
@@ -24,14 +24,14 @@ import java.io.File;
 import java.util.Objects;
 import java.util.UUID;
 
-public class Main extends JavaPlugin {
+public class PaperT11EAPIMain extends PaperPlugin {
 
     public static final String PREFIX = "§7[§bCraftTMB§7]§c ", NO_PERMISSION = PREFIX + "You don't have " +
             "the permissions for this!";
-    public static Main main;
+    public static PaperT11EAPIMain main;
 
     @Override
-    public void onEnable() {
+    public void preEnable() {
         if (!VersionHelper.aboveOr18()) {
             getLogger().severe("");
             getLogger().severe("|----------------------------------------|");
@@ -47,23 +47,27 @@ public class Main extends JavaPlugin {
             Bukkit.getPluginManager().registerEvents(new JoinLeaveListener(), this);
             Bukkit.getPluginManager().registerEvents(new TeleportListener(), this);
             Bukkit.getPluginManager().registerEvents(new InteractListener(), this);
+            Bukkit.getPluginManager().registerEvents(new EventListener(), this);
 
             new NPCCreator().init();
             new ClientCrash().init();
             new SetMaxHealth().init();
 
-            new CustomSkins().onEnable();
+            if (Bukkit.getPluginManager().isPluginEnabled("NickNamer"))
+                new CustomSkins().onEnable();
             /*if (VersionHelper.aboveOr113())
                 new LightLevel().onEnable();*/
+            else
+                getLogger().warning("NickNamer not found, \"/createskin\" and \"/applyskin\" will not be working!");
 
             Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-            Bukkit.getScheduler().runTaskAsynchronously(this, NPCRegistry::make);
+            NPCRegistry.make();
             registerYaml();
         }
     }
 
     @Override
-    public void onDisable() {
+    public void preDisable() {
         NPCRegistry.unmake();
     }
 

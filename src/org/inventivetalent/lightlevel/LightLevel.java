@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,7 +19,7 @@ public class LightLevel implements Listener {
     public static final Set<UUID> tasks = new HashSet<>();
 
     public void onEnable() {
-        Bukkit.getPluginManager().registerEvents(this, Main.main);
+        Bukkit.getPluginManager().registerEvents(this, PaperT11EAPIMain.main);
     }
 
     @EventHandler
@@ -31,7 +31,7 @@ public class LightLevel implements Listener {
         if (player.getInventory().getItemInMainHand().getType() != Material.TORCH) return;
         if (tasks.contains(player.getUniqueId())) return;
 
-        new ParticleTask(player).runTaskTimer(Main.main, 0, 30);
+        new ParticleTask(player).runTaskTimer(PaperT11EAPIMain.main, 0, 30);
         tasks.add(player.getUniqueId());
     }
 }

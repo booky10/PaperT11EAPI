@@ -26,7 +26,7 @@ import org.mineskin.SkinOptions;
 import org.mineskin.Visibility;
 import org.mineskin.data.Skin;
 import org.mineskin.data.SkinCallback;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 import tk.t11e.api.util.ExceptionUtils;
 import tk.t11e.api.util.PlayerUtils;
 
@@ -49,7 +49,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
     final Executor connectionExecutor = Executors.newSingleThreadExecutor();
     MineskinClient mineskinClient;
-    final File cacheDirectory = new File(Main.main.getDataFolder(), "skinCache");
+    final File cacheDirectory = new File(PaperT11EAPIMain.main.getDataFolder(), "skinCache");
 
     final int galleryPageSize = 36;
     final boolean enableCache = true;
@@ -58,19 +58,19 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
     final Map<UUID, Integer> playerGalleryPages = new HashMap<>();
 
     public void onEnable() {
-        Bukkit.getPluginManager().registerEvents(this, Main.main);
-        Objects.requireNonNull(Main.main.getCommand("mineskin")).setExecutor(this);
+        Bukkit.getPluginManager().registerEvents(this, PaperT11EAPIMain.main);
+        Objects.requireNonNull(PaperT11EAPIMain.main.getCommand("mineskin")).setExecutor(this);
 
         mineskinClient = new MineskinClient(connectionExecutor,
-                "MineskinGallery/" + Main.main.getDescription().getVersion());
+                "MineskinGallery/" + PaperT11EAPIMain.main.getDescription().getVersion());
 
         nickNamerEnabled = Bukkit.getPluginManager().isPluginEnabled("NickNamer");
 
         if (cacheDirectory.exists())
             if (cacheDirectory.delete())
-                Main.main.getLogger().info("Deleted old cached skins.");
+                PaperT11EAPIMain.main.getLogger().info("Deleted old cached skins.");
             else
-                Main.main.getLogger().severe("Failed to delete skin cache!");
+                PaperT11EAPIMain.main.getLogger().severe("Failed to delete skin cache!");
         cacheDirectory.mkdirs();
     }
 
@@ -90,7 +90,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 return true;
             }
             if (!sender.hasPermission("mineskin.gallery")) {
-                sender.sendMessage(Main.NO_PERMISSION);
+                sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
 
@@ -109,7 +109,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
             final Inventory inventory = Bukkit.createInventory(null, 9 * 6, inventoryGalleryTitle);
 
-            sender.sendMessage(Main.PREFIX + "§7Loading page #" + page + "...");
+            sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Loading page #" + page + "...");
             playerGalleryPages.put(((Player) sender).getUniqueId(), page);
 
             final int finalPage = page;
@@ -146,10 +146,10 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                                     ItemStack itemStack = makeSkull(id, skinObject);
                                     inventory.addItem(itemStack);
                                 } catch (IOException e) {
-                                    Main.main.getLogger().log(Level.WARNING, "IOException while connecting to " +
+                                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to " +
                                             "mineskin.org", e);
                                 } catch (Exception e) {
-                                    Main.main.getLogger().log(Level.SEVERE, "Unexpected exception", e);
+                                    PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Unexpected exception", e);
                                 }
                             });
                         }
@@ -183,7 +183,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         inventory.setItem(49, itemStack);
                     }
                 } catch (IOException e) {
-                    Main.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
+                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
                 }
             });
             return true;
@@ -194,12 +194,12 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 return true;
             }
             if (!sender.hasPermission("mineskin.view")) {
-                sender.sendMessage(Main.NO_PERMISSION);
+                sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
 
             if (args.length == 1) {
-                sender.sendMessage(Main.PREFIX + "Please specify the skin ID");
+                sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify the skin ID");
                 return true;
             }
 
@@ -209,7 +209,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             } catch (NumberFormatException ignored) {
             }
             if (id < 0) {
-                sender.sendMessage(Main.PREFIX + "Please specify a valid skin ID");
+                sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify a valid skin ID");
                 return true;
             }
 
@@ -218,18 +218,18 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         }
         if ("generate".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("mineskin.generate")) {
-                sender.sendMessage(Main.NO_PERMISSION);
+                sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
             if (args.length == 1) {
-                sender.sendMessage(Main.PREFIX + "Please specify an image URL");
+                sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify an image URL");
                 return true;
             }
 
             try {
                 new URL(args[1]);
             } catch (MalformedURLException e) {
-                sender.sendMessage(Main.PREFIX + "Invalid URL");
+                sender.sendMessage(PaperT11EAPIMain.PREFIX + "Invalid URL");
                 return true;
             }
 
@@ -247,28 +247,28 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
                 @Override
                 public void waiting(long l) {
-                    sender.sendMessage(Main.PREFIX + "§7Waiting " + (l / 1000D) + "s for upload...");
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Waiting " + (l / 1000D) + "s for upload...");
                 }
 
                 @Override
                 public void uploading() {
-                    sender.sendMessage(Main.PREFIX + "§7Generating skin...");
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Generating skin...");
                 }
 
                 @Override
                 public void error(String error) {
-                    sender.sendMessage(Main.PREFIX + "Unexpected error: " + error);
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "Unexpected error: " + error);
                 }
 
                 @Override
                 public void exception(Exception exception) {
-                    sender.sendMessage(Main.PREFIX + "Unexpected exception: " + exception.getMessage());
-                    Main.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "Unexpected exception: " + exception.getMessage());
+                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
                 }
 
                 @Override
                 public void done(Skin skin) {
-                    sender.sendMessage(Main.PREFIX + "§aSkin generated!");
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "§aSkin generated!");
 
                     if (sender instanceof Player) {
                         openView(skin.id, (Player) sender);
@@ -306,7 +306,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 URL skinUrl = new URL("http://api.mineskin.org/get/id/" + id);
                 HttpURLConnection skinConnection = (HttpURLConnection) skinUrl.openConnection();
                 skinConnection.setRequestProperty("User-Agent",
-                        "MineskinGallery/" + Main.main.getDescription().getVersion());
+                        "MineskinGallery/" + PaperT11EAPIMain.main.getDescription().getVersion());
                 if (skinConnection.getResponseCode() == 200) {
                     JsonObject skinObject =
                             new JsonParser().parse(new InputStreamReader(skinConnection.getInputStream())).getAsJsonObject();
@@ -322,7 +322,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     return null;
                 }
             } catch (IOException e) {
-                Main.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
+                PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
             }
         }
         throw new RuntimeException("No cached version of skin #" + id + " available and failed to connect to " +
@@ -375,13 +375,13 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                             Integer.parseInt(Objects.requireNonNull(skullItem.getItemMeta().getLore()).get(0).substring(1));
                     if ("§bAdd to your inventory".equals(itemStack.getItemMeta().getDisplayName())) {
                         if (!event.getWhoClicked().hasPermission("mineskin.give.item")) {
-                            event.getWhoClicked().sendMessage(Main.NO_PERMISSION);
+                            event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
                         event.getWhoClicked().getInventory().addItem(skullItem);
                     } else if ("§bSet as your own head".equals(itemStack.getItemMeta().getDisplayName())) {
                         if (!event.getWhoClicked().hasPermission("mineskin.give.head")) {
-                            event.getWhoClicked().sendMessage(Main.NO_PERMISSION);
+                            event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
                         if (event.getWhoClicked().getInventory().getHelmet() != null) {
@@ -391,7 +391,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         event.getWhoClicked().getInventory().setHelmet(skullItem);
                     } else if ("§bSet as your own skin".equals(itemStack.getItemMeta().getDisplayName())) {
                         if (!event.getWhoClicked().hasPermission("mineskin.give.skin")) {
-                            event.getWhoClicked().sendMessage(Main.NO_PERMISSION);
+                            event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
                         JsonObject skinObject = getFromCacheOrDownload(skinId);
@@ -403,7 +403,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         NickNamerAPI.getNickManager().setCustomSkin(event.getWhoClicked().getUniqueId(),
                                 "MineSkinGallery-" + skinId);
                     } else if ("§bShow online".equals(itemStack.getItemMeta().getDisplayName())) {
-                        event.getWhoClicked().sendMessage(Main.PREFIX + "§aClick here to view this skin on the " +
+                        event.getWhoClicked().sendMessage(PaperT11EAPIMain.PREFIX + "§aClick here to view this skin on the " +
                                 "MineSkin" +
                                 " website: §lhttps://mineskin.org/" + skinId);
                         event.getWhoClicked().closeInventory();
@@ -422,7 +422,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
 	/*@EventHandler
 	public void onInventoryClose(InventoryCloseEvent event) {
-		Bukkit.getScheduler().runTaskLater(Main.main, () -> {
+		Bukkit.getScheduler().runTaskLater(PaperT11EAPIMain.main, () -> {
 			event.getPlayer().getOpenInventory();
 			String newTitle = event.getPlayer().getOpenInventory().getTitle();
 			if (!newTitle.contains("MineSkin")) {
@@ -454,7 +454,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         JsonObject skinObject = getFromCacheOrDownload(id);
 
         if (skinObject == null) {
-            player.sendMessage(Main.PREFIX + "Failed to load skin #" + id + " (Not Found)");
+            player.sendMessage(PaperT11EAPIMain.PREFIX + "Failed to load skin #" + id + " (Not Found)");
             return;
         }
 

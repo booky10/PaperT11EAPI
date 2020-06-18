@@ -2,7 +2,7 @@ package tk.t11e.api.util;
 // Created by booky10 in PaperT11EAPI (16:10 14.05.20)
 
 import org.bukkit.Bukkit;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 public class VersionHelper {
 
@@ -107,6 +107,18 @@ public class VersionHelper {
         return is115();
     }
 
+    public static Boolean aboveOr(Version version) {
+        return getVersion().number >= version.number;
+    }
+
+    public static Boolean is(Version version) {
+        return getVersion().number.equals(version.number);
+    }
+
+    public static Boolean belowOr(Version version){
+        return getVersion().number<version.number;
+    }
+
     public static Boolean isPaper() {
         return Bukkit.getVersion().toLowerCase().contains("paper");
     }
@@ -120,7 +132,7 @@ public class VersionHelper {
             return Class.forName("net.minecraft.server." + getNMSVersion() + "." + name);
         } catch (ClassNotFoundException exception) {
             exception.printStackTrace();
-            return Main.main.getClass();
+            return PaperT11EAPIMain.main.getClass();
         }
     }
 
@@ -129,27 +141,35 @@ public class VersionHelper {
             return Class.forName("org.bukkit.craftbukkit." + getNMSVersion() + "." + name);
         } catch (ClassNotFoundException exception) {
             exception.printStackTrace();
-            return Main.main.getClass();
+            return PaperT11EAPIMain.main.getClass();
         }
     }
 
     public enum Version {
 
-        UNKOWN("UNKNOWN"),
-        V1_15("v1_15_R1"),
-        V1_14("v1_14_R1"),
-        V1_13("v1_13_R2"),
-        V1_12("v1_12_R1"),
-        V1_11("v1_11_R1"),
-        V1_10("v1_10_R1"),
-        V1_9("v1_9_R2"),
-        V1_8("v1_8_R3"),
-        V1_7("v1_7_R4");
+        V1_15("v1_15_R1", 10, "1.15"),
+        V1_14("v1_14_R1", 9, "1.14"),
+        V1_13("v1_13_R2", 8, "1.13"),
+        V1_12("v1_12_R1", 7, "1.12"),
+        V1_11("v1_11_R1", 6, "1.11"),
+        V1_10("v1_10_R1", 5, "1.10"),
+        V1_9("v1_9_R2", 4, "1.9"),
+        V1_8("v1_8_R3", 3, "1.8"),
+        V1_7("v1_7_R4", 2, "1.7"),
+        UNKOWN("UNKNOWN", 1, "Unknown");
 
         private final String nmsVersion;
+        private final Integer number;
+        private final String name;
 
-        Version(String nmsVersion) {
+        Version(String nmsVersion, Integer number, String name) {
             this.nmsVersion = nmsVersion;
+            this.number = number;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 }

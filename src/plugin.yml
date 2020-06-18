@@ -1,15 +1,18 @@
 ---
 name: PaperT11EAPI
-main: tk.t11e.api.main.Main
-version: '1.4-SNAPSHOT'
-description: A API plugin
+main: tk.t11e.api.main.PaperT11EAPIMain
+version: '1.4.2-SNAPSHOT'
+description: An API plugin
 author: booky10
 load: POSTWORLD
 prefix: API
 website: https://t11e.tk
+api-version: '1.13'
+depend: ["ProtocolLib"]
+softdepend: ["PlugMan", "NickNamer"]
 commands:
   clientcrash:
-    description: Crashes the whole minecraft client (particles)
+    description: Crashes the whole minecraft client (with particles)
     usage: 'Usage: /clientcrash <player>'
     permission: clientcrash
   createcustomskin:
@@ -34,10 +37,3 @@ commands:
     usage: 'Usage: /maxhealth <player> <health>'
     permission: maxhealth
     aliases: ["setmaxhealth", "smh", "mh"]
-depend:
-  - ProtocolLib
-  - NickNamer
-  - LuckPerms
-  - PlaceholderAPI
-  - PlugMan
-  - PacketWrapper

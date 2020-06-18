@@ -10,7 +10,7 @@ import org.mineskin.SkinOptions;
 import org.mineskin.data.Skin;
 import org.mineskin.data.SkinCallback;
 import tk.t11e.api.commands.CommandExecutor;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -26,7 +26,7 @@ public class CreateSkin extends CommandExecutor {
 
 
     public CreateSkin() {
-        super(Main.main, "createcustomskin", "/createcustomskin <Name> <URL>",
+        super(PaperT11EAPIMain.main, "createcustomskin", "/createcustomskin <Name> <URL>",
                 "customskins.create", Receiver.ALL, "createskin");
     }
 
@@ -78,7 +78,7 @@ public class CreateSkin extends CommandExecutor {
 
                         skinFile.delete();
 
-                        Main.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
+                        PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
                     }
 
                     @Override
@@ -102,7 +102,7 @@ public class CreateSkin extends CommandExecutor {
                             new Gson().toJson(jsonObject, writer);
                         } catch (IOException e) {
                             sender.sendMessage("Failed to save skin to file: " + e.getMessage());
-                            Main.main.getLogger().log(Level.SEVERE, "Failed to save skin", e);
+                            PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Failed to save skin", e);
                         }
                     }
                 });
@@ -112,7 +112,7 @@ public class CreateSkin extends CommandExecutor {
             sender.sendMessage("Invalid URL");
         } catch (IOException e) {
             sender.sendMessage("Unexpected IOException: " + e.getMessage());
-            Main.main.getLogger().log(Level.SEVERE, "Unexpected IOException while creating skin '" + args[0]
+            PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Unexpected IOException while creating skin '" + args[0]
                     + "' with source '" + args[1] + "'", e);
         }
     }
@@ -135,7 +135,7 @@ public class CreateSkin extends CommandExecutor {
                     privateUpload = true;
 
                 if (skinFile.exists()) {
-                    player.sendMessage(Main.PREFIX + "Custom skin '" + args[0] + "' already exists. Please " +
+                    player.sendMessage(PaperT11EAPIMain.PREFIX + "Custom skin '" + args[0] + "' already exists. Please " +
                             "choose a different name.");
                     return;
                 } else {
@@ -147,18 +147,18 @@ public class CreateSkin extends CommandExecutor {
 
                     @Override
                     public void waiting(long l) {
-                        player.sendMessage(Main.PREFIX + "§7Waiting " + (l / 1000D) + "s to upload skin...");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§7Waiting " + (l / 1000D) + "s to upload skin...");
                     }
 
                     @Override
                     public void uploading() {
-                        player.sendMessage(Main.PREFIX + "§eUploading skin...");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§eUploading skin...");
                     }
 
                     @Override
                     public void error(String s) {
-                        player.sendMessage(Main.PREFIX + "§cError while generating skin: " + s);
-                        player.sendMessage(Main.PREFIX + "§cPlease make sure the image is a valid skin texture " +
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§cError while generating skin: " + s);
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§cPlease make sure the image is a valid skin texture " +
                                 "and try again.");
 
                         skinFile.delete();
@@ -166,19 +166,19 @@ public class CreateSkin extends CommandExecutor {
 
                     @Override
                     public void exception(Exception exception) {
-                        player.sendMessage(Main.PREFIX + "§cException while generating skin, see console for " +
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§cException while generating skin, see console for " +
                                 "details: " + exception.getMessage());
-                        player.sendMessage(Main.PREFIX + "§cPlease make sure the image is a valid skin texture " +
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§cPlease make sure the image is a valid skin texture " +
                                 "and try again.");
 
                         skinFile.delete();
 
-                        Main.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
+                        PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
                     }
 
                     @Override
                     public void done(Skin skin) {
-                        player.sendMessage(Main.PREFIX + "§aSkin data generated.");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSkin data generated.");
                         JsonObject jsonObject = new JsonObject();
                         jsonObject.addProperty("id", skin.data.uuid.toString());
                         jsonObject.addProperty("name", "");
@@ -196,18 +196,18 @@ public class CreateSkin extends CommandExecutor {
                         try (Writer writer = new FileWriter(skinFile)) {
                             new Gson().toJson(jsonObject, writer);
                         } catch (IOException e) {
-                            player.sendMessage(Main.PREFIX + "Failed to save skin to file: " + e.getMessage());
-                            Main.main.getLogger().log(Level.SEVERE, "Failed to save skin", e);
+                            player.sendMessage(PaperT11EAPIMain.PREFIX + "Failed to save skin to file: " + e.getMessage());
+                            PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Failed to save skin", e);
                         }
                     }
                 });
             } else
                 help(player);
         } catch (MalformedURLException e) {
-            player.sendMessage(Main.PREFIX + "Invalid URL");
+            player.sendMessage(PaperT11EAPIMain.PREFIX + "Invalid URL");
         } catch (IOException e) {
-            player.sendMessage(Main.PREFIX + "Unexpected IOException: " + e.getMessage());
-            Main.main.getLogger().log(Level.SEVERE, "Unexpected IOException while creating skin '" + args[0]
+            player.sendMessage(PaperT11EAPIMain.PREFIX + "Unexpected IOException: " + e.getMessage());
+            PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Unexpected IOException while creating skin '" + args[0]
                     + "' with source '" + args[1] + "'", e);
         }
     }

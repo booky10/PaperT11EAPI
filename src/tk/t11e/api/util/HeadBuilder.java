@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.SkullType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -13,7 +14,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.lang.reflect.Field;
 import java.util.*;
 
-@SuppressWarnings({"SpellCheckingInspection", "UnusedReturnValue"})
+@SuppressWarnings({"SpellCheckingInspection", "UnusedReturnValue", "deprecation"})
 public class HeadBuilder {
 
     private int amount;
@@ -182,11 +183,15 @@ public class HeadBuilder {
     public ItemStack build() {
         ItemStack itemStack;
         try {
-            itemStack = new ItemStack(Material.PLAYER_HEAD, amount);
+            itemStack = new ItemStack(Material.valueOf("LEGACY_SKULL_ITEM"), amount, (short) SkullType.PLAYER.ordinal());
         } catch (Exception exception) {
-            itemStack = new ItemStack(Material.valueOf("SKULL"), amount, (short) 3);
+            itemStack = new ItemStack(Material.valueOf("SKULL_ITEM"), amount, (short) SkullType.PLAYER.ordinal());
         }
-        SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
+        SkullMeta itemMeta;
+        if (itemStack.getItemMeta() instanceof SkullMeta)
+            itemMeta = (SkullMeta) itemStack.getItemMeta();
+        else
+            throw new IllegalStateException("Error while creating SkullMeta! (WHY DOES THIS NOT WORK?)");
 
         if (VersionHelper.aboveOr111())
             itemMeta.setUnbreakable(unbreakable);

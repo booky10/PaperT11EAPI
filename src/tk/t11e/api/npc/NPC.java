@@ -8,10 +8,13 @@ import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.mineskin.MineskinClient;
 import org.mineskin.customskins.CustomSkins;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
+import tk.t11e.api.util.SpecificVersion;
 import tk.t11e.api.util.VersionHelper;
+import tk.t11e.api.util.VersionNotSupportException;
 
 import java.io.File;
 import java.io.FileReader;
@@ -19,8 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class NPC {
@@ -30,7 +32,9 @@ public class NPC {
     private final UUID uuid;
     private Boolean showInTabList;
     private Action action;
-    private final Property property;
+    private Property property;
+    private HashMap<ItemSlot, ItemStack> equipment;
+    private List<Player> viewers;
 
     private Object entity = null;
     private Object server = null;
@@ -57,6 +61,15 @@ public class NPC {
     private final Class<?> dataWatcherRegistryClass = VersionHelper.getNMSClass("DataWatcherRegistry");
     private final Class<?> dataWatcherSerializerClass = VersionHelper.getNMSClass("DataWatcherSerializer");
     private final Class<?> entityMetadataPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityMetadata");
+    private final Class<?> entityEquipmentPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityEquipment");
+    private final Class<?> craftItemStackClass = VersionHelper.getOBCClass("inventory.CraftItemStack");
+    private final Class<?> itemStackClass = VersionHelper.getNMSClass("ItemStack");
+    private final Class<?> enumItemSlotClass = VersionHelper.getNMSClass("EnumItemSlot");
+    private final Class<?> entityTeleportPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityTeleport");
+    private final Class<?> entityHeadRotationPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntityHeadRotation");
+    private final Class<?> entityLookPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntity$PacketPlayOutEntityLook");
+    private final Class<?> entityMoveLookPacketClass = VersionHelper.getNMSClass("PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook");
+    private final Class<?> animationPacketClass = VersionHelper.getNMSClass("PacketPlayOutAnimation");
 
     public NPC(String name, Location location) {
         this(name, name, name, false, location,
@@ -84,6 +97,7 @@ public class NPC {
         this.action = action;
         this.actionString = "";
         this.property = property;
+        this.equipment = new HashMap<>();
 
         try {
             Class<?> craftServerClass = VersionHelper.getOBCClass("CraftServer");
@@ -103,6 +117,14 @@ public class NPC {
         } finally {
             NPCRegistry.register(this);
         }
+    }
+
+    public void setProperty(Property property) {
+        this.property = property;
+    }
+
+    public Property getProperty() {
+        return property;
     }
 
     public NPC updateNPC() {
@@ -125,7 +147,7 @@ public class NPC {
 
                     Property property = new Property(name, value, signature);
                     profile.getProperties().put(name, property);
-                } catch (IOException e) {
+                } catch (IOException exception) {
                     System.out.println("[NPCs] Error loading Skin \"" + skin + "\"!");
                 }
             }
@@ -174,6 +196,26 @@ public class NPC {
         return this;
     }
 
+    public List<Player> getViewers() {
+        return viewers;
+    }
+
+    public void setViewers(List<Player> viewers) {
+        this.viewers = viewers;
+    }
+
+    public void addViewer(Player viewer) {
+        viewers.add(viewer);
+    }
+
+    public void removeViewer(Player viewer) {
+        viewers.remove(viewer);
+    }
+
+    public void clearViewers() {
+        viewers.clear();
+    }
+
     public Integer getEntityID() {
         if (entity != null)
             try {
@@ -201,29 +243,21 @@ public class NPC {
         return this;
     }
 
-    public NPC removeFromTabList(Iterable<? extends Player> players) {
-        for (Player player : players)
+    public NPC removeFromTabList() {
+        for (Player player : viewers)
             removeFromTabList(player);
         return this;
     }
 
-    public NPC removeFromTabList() {
-        removeFromTabList(Bukkit.getOnlinePlayers());
-        return this;
-    }
-
-    public NPC sendPackets(Iterable<? extends Player> players) {
-        for (Player player : players)
+    public NPC sendPackets() {
+        for (Player player : viewers)
             sendPacket(player);
         return this;
     }
 
-    public NPC sendPackets() {
-        sendPackets(Bukkit.getOnlinePlayers());
-        return this;
-    }
-
     public NPC sendPacket(Player player) {
+        if (player.getWorld().getUID() != location.getWorld().getUID()) return this;
+        if (player.getClientViewDistance() * 24 < player.getLocation().distance(location)) return this;
         remove(player);
 
         if (entity != null) {
@@ -237,17 +271,27 @@ public class NPC {
                         .newInstance(entity);
                 Object headRotationPacket = headRotationPacketClass.getConstructor(entityClass,
                         byte.class).newInstance(entity, (byte) (location.getYaw() * 256 / 360));
+                Method nmsCopyMethod = craftItemStackClass.getMethod("asNMSCopy", ItemStack.class);
+                Constructor<?> entityEquipmentConstructor = entityEquipmentPacketClass.getConstructor(int.class,
+                        enumItemSlotClass, itemStackClass);
+                List<Object> equipmentPackets = new ArrayList<>();
+                for (ItemSlot slot : equipment.keySet())
+                    if (VersionHelper.aboveOr(slot.firstVersion))
+                        equipmentPackets.add(entityEquipmentConstructor.newInstance((int) getEntityID(),
+                                slot.getAsEnumItemSlot(), nmsCopyMethod.invoke(null, equipment.get(slot))));
 
                 Object watcher = entityPlayerClass.getMethod("getDataWatcher").invoke(entity);
-
                 Constructor<?> constructor = entityMetadataPacketClass.getConstructor(int.class,
                         dataWatcherClass, boolean.class);
                 Object entityMetadataPacket = constructor.newInstance(getEntityID(), watcher, true);
+                Method packetSendMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
 
-                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, playerInfoPacket);
-                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, entitySpawnPacket);
-                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, headRotationPacket);
-                playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, entityMetadataPacket);
+                packetSendMethod.invoke(connection, playerInfoPacket);
+                packetSendMethod.invoke(connection, entitySpawnPacket);
+                packetSendMethod.invoke(connection, headRotationPacket);
+                packetSendMethod.invoke(connection, entityMetadataPacket);
+                for (Object equipmentPacket : equipmentPackets)
+                    packetSendMethod.invoke(connection, equipmentPacket);
             } catch (IllegalAccessException | InvocationTargetException
                     | NoSuchMethodException | InstantiationException exception) {
                 exception.printStackTrace();
@@ -258,10 +302,10 @@ public class NPC {
             connection.sendPacket(new PacketPlayOutEntityMetadata(entity.getId(), watcher, true));*/
 
             if (!showInTabList)
-                Bukkit.getScheduler().runTaskLaterAsynchronously(Main.main, () ->
-                        removeFromTabList(player), 20);
+                Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main, () ->
+                        removeFromTabList(player), 5);
         } else
-            Bukkit.getScheduler().runTaskLater(Main.main, () -> sendPacket(player), 20);
+            Bukkit.getScheduler().runTaskLater(PaperT11EAPIMain.main, () -> sendPacket(player), 20);
         return this;
     }
 
@@ -276,6 +320,22 @@ public class NPC {
         }
     }
 
+    public HashMap<ItemSlot, ItemStack> getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(HashMap<ItemSlot, ItemStack> equipment) {
+        this.equipment = equipment;
+    }
+
+    public void putEquipment(ItemSlot slot, ItemStack item) {
+        equipment.put(slot, item);
+    }
+
+    public void clearEquipment() {
+        equipment.clear();
+    }
+
     public NPC remove(Player player) {
         try {
             if (showInTabList)
@@ -283,7 +343,6 @@ public class NPC {
 
             Object connection = getPlayerConnection(player);
             Constructor<?> packetConstructor = entityDestroyPacketClass.getConstructor(int[].class);
-            //int id = (int) entityClass.getMethod("getId").invoke(entity);
             Object packet = packetConstructor.newInstance((Object) new int[]{getEntityID()});
 
             playerConnectionClass.getMethod("sendPacket", packetClass).invoke(connection, packet);
@@ -295,18 +354,116 @@ public class NPC {
         return this;
     }
 
-    public NPC remove(Iterable<? extends Player> players) {
-        if (players != null)
-            for (Player player : players)
-                remove(player);
+    public NPC remove() {
+        for (Player player : viewers)
+            remove(player);
         return this;
     }
 
-    public NPC remove() {
-        remove(Bukkit.getOnlinePlayers());
-        NPCRegistry.unregister(this);
-        return this;
+    public void teleport(Location location) {
+        try {
+            this.location = location;
+            Method locationMethod = entityClass.getMethod("setLocation",
+                    double.class, double.class, double.class, float.class, float.class);
+            locationMethod.invoke(entity, location.getX(), location.getY(), location.getZ(),
+                    location.getYaw(), location.getPitch());
+            remove().sendPackets();
+        } catch (NoSuchMethodException | IllegalAccessException
+                | InvocationTargetException exception) {
+            exception.printStackTrace();
+        }
     }
+
+    public void move(Location location) {
+        try {
+            byte headYaw = (byte) (location.getYaw() * 256 / 360);
+            short dx = (short) ((location.getX() * 32 - this.location.getX() * 32) * 128);
+            short dy = (short) ((location.getY() * 32 - this.location.getY() * 32) * 128);
+            short dz = (short) ((location.getZ() * 32 - this.location.getZ() * 32) * 128);
+            byte yaw = (byte) location.getYaw();
+            byte pitch = (byte) location.getPitch();
+
+            Object packet = entityMoveLookPacketClass.getConstructor(int.class, short.class, short.class, short.class,
+                    byte.class, byte.class, boolean.class).newInstance(getEntityID(), dx, dy, dz, yaw,
+                    pitch, false);
+            Object headPacket = entityHeadRotationPacketClass.getConstructor(entityClass, byte.class)
+                    .newInstance(entity, headYaw);
+            Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
+
+            for (Player player : viewers)
+                if (player != null && player.isOnline()) {
+                    sendPacketMethod.invoke(getPlayerConnection(player), packet);
+                    sendPacketMethod.invoke(getPlayerConnection(player), headPacket);
+                }
+            this.location = location;
+        } catch (NoSuchMethodException | IllegalAccessException
+                | InstantiationException | InvocationTargetException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    public void look(float yaw, float pitch) {
+        try {
+            byte headYaw = (byte) (yaw * 256 / 360);
+
+            Object lookPacket = entityLookPacketClass.getConstructor(int.class, byte.class, byte.class, boolean.class)
+                    .newInstance(getEntityID(), (byte) yaw, (byte) pitch, false);
+            Object headPacket = entityHeadRotationPacketClass.getConstructor(entityClass, byte.class)
+                    .newInstance(entity, headYaw);
+            Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
+
+            for (Player player : viewers)
+                if (player != null && player.isOnline()) {
+                    sendPacketMethod.invoke(getPlayerConnection(player), lookPacket);
+                    sendPacketMethod.invoke(getPlayerConnection(player), headPacket);
+                }
+        } catch (NoSuchMethodException | InstantiationException
+                | IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    public void animate(int id) {
+        try {
+            Object packet = animationPacketClass.getConstructor(entityClass, int.class).newInstance(entity, id);
+            Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
+
+            for (Player player : viewers)
+                if (player != null)
+                    sendPacketMethod.invoke(getPlayerConnection(player), packet);
+        } catch (NoSuchMethodException | InstantiationException
+                | IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+/*    public void setPose(Pose pose) {
+        try {
+            Object watcher = entityPlayerClass.getMethod("getDataWatcher").invoke(entity);
+            Method watcherSet = null;
+            for (Method method : dataWatcherClass.getMethods())
+                if (method.getName().endsWith("set"))
+                    watcherSet = method;
+            if (watcherSet == null)
+                throw new NoSuchMethodException("Method not found!");
+            Object watcherObject = dataWatcherObjectClass.getConstructor(int.class,
+                    dataWatcherSerializerClass).newInstance(6, dataWatcherRegistryClass
+                    .getField("s").get(null));
+            watcherSet.invoke(watcher, watcherObject, (byte) 127);
+
+
+            WrapperPlayServerBed packet = new WrapperPlayServerBed();
+
+            packet.setEntityID(id);
+            packet.setLocation(new BlockPosition(location.toVector()));
+
+            for (Player player : visible)
+                if (player != null)
+                    packet.sendPacket(player);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | NoSuchFieldException | InstantiationException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }*/
 
     public GameProfile getProfile() {
         return profile;
@@ -383,5 +540,81 @@ public class NPC {
         EXECUTE_COMMAND,
         SEND_SERVER,
         NOTHING
+    }
+
+    @Deprecated
+    @SpecificVersion(from = VersionHelper.Version.V1_14)
+    public enum Pose {
+
+        STANDING("STANDING", VersionHelper.Version.V1_7, 0),
+        ELYTRA("FALL_FLYING", VersionHelper.Version.V1_9, 1),
+        SLEEPING("SLEEPING", VersionHelper.Version.V1_7, 2),
+        SWIMMING("SWIMMING", VersionHelper.Version.V1_13, 3),
+        SPIN_ATTACK("SPIN_ATTACK", VersionHelper.Version.V1_9, 4),
+        SNEAKING("SNEAKING", VersionHelper.Version.V1_7, 5),
+        DYING("DYING", VersionHelper.Version.V1_7, 6);
+
+        private final Class<?> entityPoseClass;
+        private final String identifier;
+        private final VersionHelper.Version firstVersion;
+        private final int enumNumber;
+
+        Pose(String identifier, VersionHelper.Version firstVersion, int enumNumber) {
+            if (!VersionHelper.aboveOr114())
+                throw new VersionNotSupportException();
+            this.identifier = identifier;
+            this.firstVersion = firstVersion;
+            this.enumNumber = enumNumber;
+            entityPoseClass = VersionHelper.getNMSClass("EntityPose");
+        }
+
+        public Object getAsEntityPose() {
+            try {
+                if (VersionHelper.aboveOr(firstVersion))
+                    return entityPoseClass.getMethod("valueOf", String.class).invoke(null, identifier);
+                else
+                    throw new IllegalAccessException("Tried to access something, that (in this version)" +
+                            " doesn't exits! (" + identifier + ", " + firstVersion.name() + ")");
+            } catch (IllegalAccessException | InvocationTargetException
+                    | NoSuchMethodException exception) {
+                throw new IllegalStateException(exception);
+            }
+        }
+
+        public int getEnumNumber() {
+            return enumNumber;
+        }
+    }
+
+    public enum ItemSlot {
+
+        HEAD("HEAD", VersionHelper.Version.V1_7),
+        CHEST("CHEST", VersionHelper.Version.V1_7),
+        LEGS("LEGS", VersionHelper.Version.V1_7),
+        FEET("FEET", VersionHelper.Version.V1_7),
+        MAIN_HAND("MAINHAND", VersionHelper.Version.V1_7),
+        OFF_HAND("OFFHAND", VersionHelper.Version.V1_9);
+
+        private final Class<?> enumItemSlotClass = VersionHelper.getNMSClass("EnumItemSlot");
+        private final String identifier;
+        private final VersionHelper.Version firstVersion;
+
+        ItemSlot(String identifier, VersionHelper.Version firstVersion) {
+            this.identifier = identifier;
+            this.firstVersion = firstVersion;
+        }
+
+        public Object getAsEnumItemSlot() {
+            try {
+                if (VersionHelper.aboveOr(firstVersion))
+                    return enumItemSlotClass.getMethod("valueOf", String.class).invoke(null, identifier);
+                else
+                    throw new IllegalAccessException("Tried to access something, that (in this version)" +
+                            " doesn't exits! (" + identifier + ", " + firstVersion.name() + ")");
+            } catch (IllegalAccessException | InvocationTargetException
+                    | NoSuchMethodException exception) {
+                throw new IllegalStateException(exception);
+            }
+        }
     }
 }

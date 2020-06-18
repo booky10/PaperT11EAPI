@@ -1,21 +1,20 @@
 package tk.t11e.api.util;
 // Created by booky10 in PaperT11EAPI (19:27 26.02.20)
 
-import com.comphenix.packetwrapper.WrapperPlayServerBlockAction;
-import com.comphenix.protocol.wrappers.BlockPosition;
 import com.sun.istack.internal.NotNull;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import javax.annotation.CheckReturnValue;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class OtherUtils {
 
+    @CheckReturnValue
     public static <T, E> Set<T> getKeysByValue(Map<T, E> map, E value) {
         return map.entrySet()
                 .stream()
@@ -24,6 +23,7 @@ public class OtherUtils {
                 .collect(Collectors.toSet());
     }
 
+    @CheckReturnValue
     public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
         Set<T> keys = getKeysByValue(map, value);
         if (keys.iterator().hasNext())
@@ -85,6 +85,7 @@ public class OtherUtils {
         return b;
     }
 
+    @CheckReturnValue
     public static <T> ArrayList<T> iterableToList(Iterable<T> iterable) {
         ArrayList<T> list = new ArrayList<>();
         for (T object : iterable)
@@ -102,6 +103,7 @@ public class OtherUtils {
     }
 
     @NotNull
+    @CheckReturnValue
     public static <T, E> HashMap<T, E> listsToMap(@NotNull List<T> keyList,
                                                   @NotNull List<E> valueList) {
         if (keyList.size() != valueList.size())
@@ -123,11 +125,11 @@ public class OtherUtils {
     }*/
 
     //@SuppressWarnings("deprecation")
-    public static void changeChestState(Player player, Location location, boolean open) {
+    /*public static void changeChestState(Player player, Location location, boolean open) {
         //player.playNote(location, (byte) 1, (byte) (open ? 1 : 0));
         /*BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         PacketPlayOutBlockAction packet = new PacketPlayOutBlockAction(pos, Blocks.CHEST, 1, open ? 1 : 0);
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);*/
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
 
         BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         WrapperPlayServerBlockAction blockAction = new WrapperPlayServerBlockAction();
@@ -136,9 +138,56 @@ public class OtherUtils {
         blockAction.setByte1(1);
         blockAction.setByte2(open ? 1 : 0);
         blockAction.sendPacket(player);
-    }
+    }*/
 
     public static <T> List<T> setToList(Set<T> set) {
         return new ArrayList<>(set);
+    }
+
+    @CheckReturnValue
+    public static String generateBox(CharSequence text) {
+        int maxLength = -1;
+        StringBuilder message = new StringBuilder();
+        StringBuilder hyphens = new StringBuilder();
+        StringBuilder spaces = new StringBuilder();
+        List<StringBuilder> builders = new ArrayList<>();
+
+        for (String string : text.toString().split("\n")) {
+            StringBuilder builder = new StringBuilder(string);
+            if (maxLength == -1)
+                maxLength = builder.length();
+            else
+                maxLength = Math.max(maxLength, builder.length());
+            builders.add(builder);
+        }
+
+        while (hyphens.length() < maxLength)
+            hyphens.append("-");
+        while (spaces.length() < maxLength)
+            spaces.append(" ");
+
+        message.append("\n");
+        message.append("|-").append(hyphens).append("-|\n");
+        message.append("| ").append(spaces).append(" |\n");
+
+        for (StringBuilder builder : builders) {
+            while (builder.length() < maxLength)
+                builder.append(" ");
+            message.append("| ").append(builder).append(" |\n");
+        }
+
+        message.append("| ").append(spaces).append(" |\n");
+        message.append("|-").append(hyphens).append("-|\n");
+        message.append("\n");
+        return message.toString();
+    }
+
+    @CheckReturnValue
+    public static String generateBox(CharSequence... text) {
+        if (text == null) return "";
+        StringBuilder builder = new StringBuilder();
+        for (CharSequence sequence : text)
+            builder.append(sequence).append("\n");
+        return generateBox(builder.toString());
     }
 }

@@ -5,7 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 import tk.t11e.api.util.VersionHelper;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class ClientCrash extends CommandExecutor {
 
 
     public ClientCrash() {
-        super(Main.main, "clientcrash", "/clientcrash <player>", "clientcrash",
+        super(PaperT11EAPIMain.main, "clientcrash", "/clientcrash <player>", "clientcrash",
                 Receiver.ALL);
     }
 
@@ -43,13 +43,13 @@ public class ClientCrash extends CommandExecutor {
                         || player.hasPermission("clientcrash.exempt.bypass")) {
                     if (VersionHelper.aboveOr19()) {
                         target.spawnParticle(Particle.EXPLOSION_HUGE, target.getEyeLocation(), Integer.MAX_VALUE);
-                        player.sendMessage(Main.PREFIX + "§aSuccessfully crashed player!");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully crashed player!");
                     } else
-                        player.sendMessage(Main.PREFIX + "Sorry, but your version doesn't support crashes!");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "Sorry, but your version doesn't support crashes!");
                 } else
-                    player.sendMessage(Main.PREFIX + "You can't crash that player!");
+                    player.sendMessage(PaperT11EAPIMain.PREFIX + "You can't crash that player!");
             } else
-                player.sendMessage(Main.PREFIX + "Unknown player!");
+                player.sendMessage(PaperT11EAPIMain.PREFIX + "Unknown player!");
         } else
             help(player);
     }

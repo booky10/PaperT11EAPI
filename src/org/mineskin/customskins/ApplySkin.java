@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.inventivetalent.nicknamer.api.NickNamerAPI;
 import tk.t11e.api.commands.CommandExecutor;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 import java.io.File;
 import java.io.FileReader;
@@ -22,7 +22,7 @@ public class ApplySkin extends CommandExecutor {
 
 
     public ApplySkin() {
-        super(Main.main, "applyskin", "/applyskin <Name> [Player]", "customskins.apply",
+        super(PaperT11EAPIMain.main, "applyskin", "/applyskin <Name> [Player]", "customskins.apply",
                 Receiver.ALL, "applycustomskin", "setcustomskin");
     }
 
@@ -52,7 +52,7 @@ public class ApplySkin extends CommandExecutor {
                 skinData = new JsonParser().parse(new FileReader(skinFile)).getAsJsonObject();
             } catch (IOException e) {
                 sender.sendMessage("Failed to load skin from file: " + e.getMessage());
-                Main.main.getLogger().log(Level.SEVERE, "Failed to load skin", e);
+                PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Failed to load skin", e);
                 return;
             }
 
@@ -73,12 +73,12 @@ public class ApplySkin extends CommandExecutor {
             Player target;
             if (args.length == 2) {
                 if (!player.hasPermission("customskins.apply.other")) {
-                    player.sendMessage(Main.NO_PERMISSION);
+                    player.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                     return;
                 }
                 target = Bukkit.getPlayer(args[1]);
                 if (target == null || !target.isOnline()) {
-                    player.sendMessage(Main.PREFIX + "Player not found!");
+                    player.sendMessage(PaperT11EAPIMain.PREFIX + "Player not found!");
                     return;
                 }
             } else
@@ -86,17 +86,17 @@ public class ApplySkin extends CommandExecutor {
 
             File skinFile = new File(CustomSkins.skinFolder, args[0] + ".json");
             if (!skinFile.exists()) {
-                player.sendMessage(Main.PREFIX + "Skin \"" + args[0] + "\" does not exist");
+                player.sendMessage(PaperT11EAPIMain.PREFIX + "Skin \"" + args[0] + "\" does not exist");
                 if (player.hasPermission("customskins.create"))
-                    player.sendMessage(Main.PREFIX + "Please use \"/createcustomskin\" first!");
+                    player.sendMessage(PaperT11EAPIMain.PREFIX + "Please use \"/createcustomskin\" first!");
                 return;
             }
             JsonObject skinData;
             try {
                 skinData = new JsonParser().parse(new FileReader(skinFile)).getAsJsonObject();
             } catch (IOException e) {
-                player.sendMessage(Main.PREFIX + "Failed to load skin from file: " + e.getMessage());
-                Main.main.getLogger().log(Level.SEVERE, "Failed to load skin", e);
+                player.sendMessage(PaperT11EAPIMain.PREFIX + "Failed to load skin from file: " + e.getMessage());
+                PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Failed to load skin", e);
                 return;
             }
 
@@ -106,7 +106,7 @@ public class ApplySkin extends CommandExecutor {
             }
 
             NickNamerAPI.getNickManager().setCustomSkin(target.getUniqueId(), "cs_" + args[0]);
-            player.sendMessage(Main.PREFIX + "§aCustom skin changed to " + args[0]);
+            player.sendMessage(PaperT11EAPIMain.PREFIX + "§aCustom skin changed to " + args[0]);
         } else
             help(player);
     }

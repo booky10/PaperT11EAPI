@@ -1,9 +1,6 @@
 package tk.t11e.api.npc;
 // Created by booky10 in PaperT11EAPI (20:48 22.02.20)
 
-import org.bukkit.Bukkit;
-import tk.t11e.api.main.Main;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,20 +24,13 @@ public class NPCRegistry {
     }
 
     public static void make() {
-        Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(Main.class), () -> {
-            if (NPCs == null)
-                NPCs = new ArrayList<>();
-            for (NPC npc : NPCs) {
-                npc.remove();
-                npc.updateNPC();
-                Bukkit.getScheduler().runTaskAsynchronously(Main.main, (Runnable) npc::sendPackets);
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException exception) {
-                    exception.printStackTrace();
-                }
-            }
-        });
+        if (NPCs == null)
+            NPCs = new ArrayList<>();
+        for (NPC npc : NPCs) {
+            npc.remove();
+            npc.updateNPC();
+            npc.sendPackets();
+        }
     }
 
     public static List<NPC> getNPCs() {
@@ -50,15 +40,9 @@ public class NPCRegistry {
     }
 
     public static void unregister(NPC npc) {
-        if (NPCs == null) {
+        if (NPCs == null)
             NPCs = new ArrayList<>();
-            return;
-        }
-        NPCs.remove(npc);
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException exception) {
-            exception.printStackTrace();
-        }
+        else
+            NPCs.remove(npc);
     }
 }

@@ -6,7 +6,6 @@ import org.bukkit.entity.LivingEntity;
 
 import java.util.Objects;
 
-//TODO: more attributes
 @SuppressWarnings("deprecation")
 public class AttributeHelper {
 

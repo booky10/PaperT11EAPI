@@ -9,8 +9,9 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.inventivetalent.nicknamer.api.NickNamerAPI;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -39,7 +40,7 @@ public abstract class CommandExecutor {
     }
 
     public Boolean hasPermission(CommandSender sender) {
-        return sender.hasPermission(permission);
+        return permission == null || sender.hasPermission(permission) || permission.isEmpty();
     }
 
     public String getCommand() {
@@ -86,7 +87,7 @@ public abstract class CommandExecutor {
 
     public void help(CommandSender sender) {
         if (sender instanceof Player)
-            sender.sendMessage(Main.PREFIX + "Usage: " + getUsage());
+            sender.sendMessage(PaperT11EAPIMain.PREFIX + "Usage: " + getUsage());
         else
             sender.sendMessage("Usage: " + getUsage());
     }
@@ -116,7 +117,6 @@ public abstract class CommandExecutor {
         for (String entry : completions)
             if (StringUtils.startsWithIgnoreCase(entry, word) && !entry.equals(word))
                 list.add(entry);
-
         return list;
     }
 
@@ -137,26 +137,31 @@ public abstract class CommandExecutor {
 
         @Override
         public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player && arePlayersAllowed()) {
-                Player player = (Player) sender;
-                if (getPermission().equals(""))
-                    onPlayerExecute(player, args);
-                else if (hasPermission(player))
-                    onPlayerExecute(player, args);
+            try {
+                if (sender instanceof Player && arePlayersAllowed()) {
+                    Player player = (Player) sender;
+                    if (hasPermission(player))
+                        onPlayerExecute(player, args);
+                    else
+                        player.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
+                } else if (areConsolesAllowed())
+                    onExecute(sender, args);
                 else
-                    player.sendMessage(Main.NO_PERMISSION);
-            } else if (areConsolesAllowed())
-                onExecute(sender, args);
-            else
-                sender.sendMessage("You must execute this command as a player!");
+                    sender.sendMessage("You must execute this command as a player!");
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("(dd.MM.yyyy, hh:mm:ss)");
+                sender.sendMessage("§cPlease tell this the admins: " + exception.toString() + dateFormat.format(new Date()));
+            }
             return true;
         }
 
         @Override
         public List<String> onTabComplete(CommandSender sender, Command command, String label,
                                           String[] args) {
-            List<String> emptyCompletions = new ArrayList<>();
-            return convertTab(args, onComplete(sender, args, emptyCompletions));
+            List<String> completions = new ArrayList<>();
+            onComplete(sender, args, completions);
+            return convertTab(args, completions);
         }
     }
 }

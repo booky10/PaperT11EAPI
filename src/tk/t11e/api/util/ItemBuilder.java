@@ -183,25 +183,22 @@ public class ItemBuilder {
 
     public ItemStack build() {
         ItemStack itemStack = new ItemStack(material, amount);
-        if (material != Material.AIR)
-            if (VersionHelper.aboveOr113() && (material == Material.CAVE_AIR || material == Material.VOID_AIR))
-                return itemStack.clone();
-            else {
-                ItemMeta itemMeta = itemStack.getItemMeta();
+        if (material != Material.AIR) {
+            ItemMeta itemMeta = itemStack.getItemMeta();
 
-                if (VersionHelper.aboveOr111())
-                    itemMeta.setUnbreakable(unbreakable);
-                itemMeta.setDisplayName(name);
-                if (VersionHelper.aboveOr114())
-                    itemMeta.setCustomModelData(customDataModel);
-                itemMeta.setLore(lore);
-                for (ItemFlag itemFlag : itemFlags)
-                    itemMeta.addItemFlags(itemFlag);
+            if (VersionHelper.aboveOr111())
+                itemMeta.setUnbreakable(unbreakable);
+            itemMeta.setDisplayName(name);
+            if (VersionHelper.aboveOr114())
+                itemMeta.setCustomModelData(customDataModel);
+            itemMeta.setLore(lore);
+            for (ItemFlag itemFlag : itemFlags)
+                itemMeta.addItemFlags(itemFlag);
 
-                itemStack.setItemMeta(itemMeta);
-                for (Enchantment enchantment : enchantments.keySet())
-                    itemStack.addUnsafeEnchantment(enchantment, enchantments.get(enchantment));
-            }
+            itemStack.setItemMeta(itemMeta);
+            for (Enchantment enchantment : enchantments.keySet())
+                itemStack.addUnsafeEnchantment(enchantment, enchantments.get(enchantment));
+        }
         return itemStack.clone();
     }
 }

@@ -13,7 +13,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.mineskin.customskins.CustomSkins;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
 import tk.t11e.api.util.ExceptionUtils;
@@ -29,10 +29,10 @@ import java.util.Objects;
 @SuppressWarnings({"EmptyMethod", "ResultOfMethodCallIgnored"})
 public class NPCCreator extends CommandExecutor {
 
-    public static final File npcFolder = new File(Main.main.getDataFolder(), "NPCs");
+    public static final File npcFolder = new File(PaperT11EAPIMain.main.getDataFolder(), "NPCs");
 
     public NPCCreator() {
-        super(Main.main, "npc", "/npc <create|list|remove> <npc> <skin>", "npc",
+        super(PaperT11EAPIMain.main, "npc", "/npc <create|list|remove> <npc> <skin>", "npc",
                 Receiver.ALL);
     }
 
@@ -88,7 +88,7 @@ public class NPCCreator extends CommandExecutor {
                 if (args[1].split("").length <= 16)
                     if (skinFile.exists()) {
                         NPC npc = new NPC(args[1], args[2], args[1], false, location, NPC.Action.NOTHING);
-                        Bukkit.getScheduler().runTaskLater(Main.main, () -> {
+                        Bukkit.getScheduler().runTaskLater(PaperT11EAPIMain.main, () -> {
                             File skinSave = new File(npcFolder, npc.getUUID().toString() + ".yml");
                             FileConfiguration skinSaveConfig = YamlConfiguration.loadConfiguration(skinSave);
 
@@ -112,35 +112,35 @@ public class NPCCreator extends CommandExecutor {
                             try {
                                 skinSaveConfig.save(skinSave);
                             } catch (IOException exception) {
-                                player.sendMessage(Main.PREFIX + "Error saving file!");
+                                player.sendMessage(PaperT11EAPIMain.PREFIX + "Error saving file!");
                                 ExceptionUtils.print(exception);
                             }
                         }, 40);
-                        player.sendMessage(Main.PREFIX + "§aSuccessfully created NPC!");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully created NPC!");
                     } else
-                        player.sendMessage(Main.PREFIX + "The skin does not exits! Create it with " +
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "The skin does not exits! Create it with " +
                                 "\"/createcustomskin\"!");
                 else
-                    player.sendMessage(Main.PREFIX + "Names can only have 16 characters or lower!");
+                    player.sendMessage(PaperT11EAPIMain.PREFIX + "Names can only have 16 characters or lower!");
             } else
                 help(player);
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("remove")) {
                 if (args[1].equalsIgnoreCase("all")) {
-                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                    Bukkit.getScheduler().runTaskAsynchronously(PaperT11EAPIMain.main, () -> {
                         List<NPC> NPCs = new ArrayList<>(NPCRegistry.getNPCs());
                         for (NPC npc : NPCs) {
-                            Bukkit.getScheduler().runTaskLaterAsynchronously(Main.main, () -> {
+                            Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main, () -> {
                                 npc.remove();
                                 File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
                             }, 20);
                         }
-                        player.sendMessage(Main.PREFIX + "§aSuccessfully deleted all of the NPCs!");
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully deleted all of the NPCs!");
                     });
                 } else if (args[1].equalsIgnoreCase("world")) {
-                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                    Bukkit.getScheduler().runTaskAsynchronously(PaperT11EAPIMain.main, () -> {
                         for (NPC npc : NPCRegistry.getNPCs())
                             if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
                                 npc.remove();
@@ -148,11 +148,11 @@ public class NPCCreator extends CommandExecutor {
                                 if (file.exists())
                                     file.delete();
                             }
-                        player.sendMessage(Main.PREFIX + "§aSuccessfully deleted all of the NPCs in" +
+                        player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully deleted all of the NPCs in" +
                                 " your world!");
                     });
                 } else if (args[1].equalsIgnoreCase("nearest")) {
-                    Bukkit.getScheduler().runTaskAsynchronously(Main.main, () -> {
+                    Bukkit.getScheduler().runTaskAsynchronously(PaperT11EAPIMain.main, () -> {
                         try {
                             double distance = Double.MAX_VALUE;
                             NPC npcToDelete = null;
@@ -169,9 +169,9 @@ public class NPCCreator extends CommandExecutor {
                                 File file = new File(npcFolder, npcToDelete.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
-                                player.sendMessage(Main.PREFIX + "§aSuccessfully deleted the nearest NPC!");
+                                player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully deleted the nearest NPC!");
                             } else
-                                player.sendMessage(Main.PREFIX + "There is no NPC nearby!");
+                                player.sendMessage(PaperT11EAPIMain.PREFIX + "There is no NPC nearby!");
                         } catch (ConcurrentModificationException ignored) {
                         }
                     });

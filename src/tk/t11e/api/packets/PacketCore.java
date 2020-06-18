@@ -12,7 +12,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import tk.t11e.api.main.Main;
+import tk.t11e.api.main.PaperT11EAPIMain;
 
 public class PacketCore {
 
@@ -36,7 +36,7 @@ public class PacketCore {
                 if (entity == null) entity = player;
 
                 Entity finalEntity = entity;
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getServer().getPluginManager().callEvent(new PacketUseEntityEvent(type,
                                 player, finalEntity)));
             }
@@ -52,10 +52,10 @@ public class PacketCore {
                 EnumWrappers.EntityUseAction type = packet.getEntityUseActions().read(0);
                 int entityId = packet.getIntegers().read(0);
 
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketUseEntityEventID(type, player,
                                 entityId)));
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketUseEntityEventID(type, player,
                                 entityId)));
             }
@@ -73,7 +73,7 @@ public class PacketCore {
                         packet.getBlockPositionModifier().read(0).getY(),
                         packet.getBlockPositionModifier().read(0).getZ());
 
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketBlockDigEvent(player,
                                 blockLocation)));
             }
@@ -85,7 +85,7 @@ public class PacketCore {
                 Player player = event.getPlayer();
                 if (player == null) return;
 
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketFlyingEvent(player)));
             }
         });
@@ -99,7 +99,7 @@ public class PacketCore {
 
                 String message = packet.getStrings().read(0);
 
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketChatEvent(player, message)));
             }
         });
@@ -110,7 +110,7 @@ public class PacketCore {
                 Player player = event.getPlayer();
                 if (player == null) return;
 
-                Bukkit.getScheduler().runTask(Main.main,
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main,
                         () -> Bukkit.getPluginManager().callEvent(new PacketKeepAliveEvent(player)));
             }
         });
@@ -121,7 +121,7 @@ public class PacketCore {
                 Player player = packetEvent.getPlayer();
                 Sound sound = packetEvent.getPacket().getSoundEffects().read(0);
                 PacketNamedSoundEffectEvent event = new PacketNamedSoundEffectEvent(player, sound);
-                Bukkit.getScheduler().runTask(Main.main, () -> {
+                Bukkit.getScheduler().runTask(PaperT11EAPIMain.main, () -> {
                     Bukkit.getPluginManager().callEvent(event);
                     if (event.isCancelled())
                         packetEvent.setCancelled(true);
