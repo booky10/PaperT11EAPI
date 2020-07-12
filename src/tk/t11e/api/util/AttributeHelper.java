@@ -10,18 +10,16 @@ import java.util.Objects;
 public class AttributeHelper {
 
     public static Double getMaxHealth(LivingEntity player) {
-        try {
+        if (VersionHelper.aboveOr19())
             return Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
-        } catch (Exception exception) {
+        else
             return player.getMaxHealth();
-        }
     }
 
     public static void setMaxHealth(LivingEntity player, Double maxHealth) {
-        try {
+        if (VersionHelper.aboveOr19())
             Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).setBaseValue(maxHealth);
-        } catch (Exception exception) {
+        else
             player.setMaxHealth(maxHealth);
-        }
     }
 }

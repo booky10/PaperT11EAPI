@@ -8,16 +8,17 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.mineskin.customskins.CustomSkins;
+import org.mineskin.gallery.MineskinGallery;
 import tk.t11e.api.commands.ClientCrash;
 import tk.t11e.api.commands.NPCCreator;
 import tk.t11e.api.commands.SetMaxHealth;
-import tk.t11e.api.events.EventListener;
 import tk.t11e.api.listener.JoinLeaveListener;
 import tk.t11e.api.listener.TeleportListener;
 import tk.t11e.api.npc.InteractListener;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
 import tk.t11e.api.packets.PacketCore;
+import tk.t11e.api.util.OtherUtils;
 import tk.t11e.api.util.VersionHelper;
 
 import java.io.File;
@@ -32,37 +33,31 @@ public class PaperT11EAPIMain extends PaperPlugin {
 
     @Override
     public void preEnable() {
-        if (!VersionHelper.aboveOr18()) {
-            getLogger().severe("");
-            getLogger().severe("|----------------------------------------|");
-            getLogger().severe("| This API only supports 1.8 up to 1.15! |");
-            getLogger().severe("|----------------------------------------|");
-            getLogger().severe("");
-            Bukkit.getPluginManager().disablePlugin(this);
-        } else {
-            main = this;
-
+        main = this;
+        if (VersionHelper.aboveOr18()) {
             new PacketCore(this);
 
             Bukkit.getPluginManager().registerEvents(new JoinLeaveListener(), this);
             Bukkit.getPluginManager().registerEvents(new TeleportListener(), this);
             Bukkit.getPluginManager().registerEvents(new InteractListener(), this);
-            Bukkit.getPluginManager().registerEvents(new EventListener(), this);
 
             new NPCCreator().init();
             new ClientCrash().init();
             new SetMaxHealth().init();
 
-            if (Bukkit.getPluginManager().isPluginEnabled("NickNamer"))
+            if (Bukkit.getPluginManager().isPluginEnabled("NickNamer")) {
                 new CustomSkins().onEnable();
-            /*if (VersionHelper.aboveOr113())
-                new LightLevel().onEnable();*/
-            else
-                getLogger().warning("NickNamer not found, \"/createskin\" and \"/applyskin\" will not be working!");
+                new MineskinGallery().onEnable();
+            } else
+                getLogger().warning("NickNamer not found, \"/createskin\", \"/applyskin\" and \"/mineskin\"" +
+                        " will not be working!");
 
             Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
             NPCRegistry.make();
             registerYaml();
+        } else {
+            getLogger().info(OtherUtils.generateBox("Use this plugin from 1.8 to 1.15!"));
+            Bukkit.getPluginManager().disablePlugin(this);
         }
     }
 

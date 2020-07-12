@@ -27,7 +27,7 @@ public class CreateSkin extends CommandExecutor {
 
     public CreateSkin() {
         super(PaperT11EAPIMain.main, "createcustomskin", "/createcustomskin <Name> <URL>",
-                "customskins.create", Receiver.ALL, "createskin");
+                "api.customskins.create", Receiver.ALL, "createskin");
     }
 
     @Override

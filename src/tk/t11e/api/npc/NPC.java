@@ -34,7 +34,6 @@ public class NPC {
     private Action action;
     private Property property;
     private HashMap<ItemSlot, ItemStack> equipment;
-    private List<Player> viewers;
 
     private Object entity = null;
     private Object server = null;
@@ -196,26 +195,6 @@ public class NPC {
         return this;
     }
 
-    public List<Player> getViewers() {
-        return viewers;
-    }
-
-    public void setViewers(List<Player> viewers) {
-        this.viewers = viewers;
-    }
-
-    public void addViewer(Player viewer) {
-        viewers.add(viewer);
-    }
-
-    public void removeViewer(Player viewer) {
-        viewers.remove(viewer);
-    }
-
-    public void clearViewers() {
-        viewers.clear();
-    }
-
     public Integer getEntityID() {
         if (entity != null)
             try {
@@ -244,20 +223,19 @@ public class NPC {
     }
 
     public NPC removeFromTabList() {
-        for (Player player : viewers)
+        for (Player player : Bukkit.getOnlinePlayers())
             removeFromTabList(player);
         return this;
     }
 
     public NPC sendPackets() {
-        for (Player player : viewers)
+        for (Player player : Bukkit.getOnlinePlayers())
             sendPacket(player);
         return this;
     }
 
     public NPC sendPacket(Player player) {
         if (player.getWorld().getUID() != location.getWorld().getUID()) return this;
-        if (player.getClientViewDistance() * 24 < player.getLocation().distance(location)) return this;
         remove(player);
 
         if (entity != null) {
@@ -301,9 +279,11 @@ public class NPC {
             watcher.set(new DataWatcherObject<>(15, DataWatcherRegistry.a), (byte) 127);
             connection.sendPacket(new PacketPlayOutEntityMetadata(entity.getId(), watcher, true));*/
 
-            if (!showInTabList)
-                Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main, () ->
-                        removeFromTabList(player), 5);
+            Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main, () -> {
+                if (!showInTabList)
+                    removeFromTabList(player);
+                animate(0, player);
+            }, 2);
         } else
             Bukkit.getScheduler().runTaskLater(PaperT11EAPIMain.main, () -> sendPacket(player), 20);
         return this;
@@ -355,7 +335,7 @@ public class NPC {
     }
 
     public NPC remove() {
-        for (Player player : viewers)
+        for (Player player : Bukkit.getOnlinePlayers())
             remove(player);
         return this;
     }
@@ -390,7 +370,7 @@ public class NPC {
                     .newInstance(entity, headYaw);
             Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
 
-            for (Player player : viewers)
+            for (Player player : Bukkit.getOnlinePlayers())
                 if (player != null && player.isOnline()) {
                     sendPacketMethod.invoke(getPlayerConnection(player), packet);
                     sendPacketMethod.invoke(getPlayerConnection(player), headPacket);
@@ -412,7 +392,7 @@ public class NPC {
                     .newInstance(entity, headYaw);
             Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
 
-            for (Player player : viewers)
+            for (Player player : Bukkit.getOnlinePlayers())
                 if (player != null && player.isOnline()) {
                     sendPacketMethod.invoke(getPlayerConnection(player), lookPacket);
                     sendPacketMethod.invoke(getPlayerConnection(player), headPacket);
@@ -424,13 +404,17 @@ public class NPC {
     }
 
     public void animate(int id) {
+        for (Player player : Bukkit.getOnlinePlayers())
+            animate(id, player);
+    }
+
+    public void animate(int id, Player player) {
         try {
             Object packet = animationPacketClass.getConstructor(entityClass, int.class).newInstance(entity, id);
             Method sendPacketMethod = playerConnectionClass.getMethod("sendPacket", packetClass);
 
-            for (Player player : viewers)
-                if (player != null)
-                    sendPacketMethod.invoke(getPlayerConnection(player), packet);
+            if (player == null || !player.isOnline()) return;
+            sendPacketMethod.invoke(getPlayerConnection(player), packet);
         } catch (NoSuchMethodException | InstantiationException
                 | IllegalAccessException | InvocationTargetException exception) {
             throw new IllegalStateException(exception);

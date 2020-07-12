@@ -29,7 +29,6 @@ public class NPCRegistry {
         for (NPC npc : NPCs) {
             npc.remove();
             npc.updateNPC();
-            npc.sendPackets();
         }
     }
 
@@ -40,6 +39,7 @@ public class NPCRegistry {
     }
 
     public static void unregister(NPC npc) {
+        npc.remove();
         if (NPCs == null)
             NPCs = new ArrayList<>();
         else

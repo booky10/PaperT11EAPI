@@ -17,34 +17,32 @@ import java.util.UUID;
 
 public class TeleportListener implements Listener {
 
-    private final HashMap<UUID, Integer> timeout = new HashMap<>();
+    private final HashMap<UUID, Boolean> init = new HashMap<>();
 
     public TeleportListener() {
         for (Player player : Bukkit.getOnlinePlayers())
-            timeout.put(player.getUniqueId(), 0);
+            init.put(player.getUniqueId(), true);
     }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        timeout.put(event.getPlayer().getUniqueId(), timeout.get(event.getPlayer().getUniqueId()) + 1);
-        if (timeout.get(event.getPlayer().getUniqueId()) != 1) {
-            if (timeout.get(event.getPlayer().getUniqueId()) >= 175)
-                timeout.put(event.getPlayer().getUniqueId(), 0);
-        } else
+        if (init.get(event.getPlayer().getUniqueId())) {
+            init.put(event.getPlayer().getUniqueId(), false);
             for (NPC npc : NPCRegistry.getNPCs()) {
                 npc.remove(event.getPlayer());
                 Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main,
-                        () -> npc.sendPacket(event.getPlayer()), 5);
+                        () -> npc.sendPacket(event.getPlayer()), 2);
             }
+        }
     }
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
-        timeout.put(event.getPlayer().getUniqueId(), 0);
+        init.put(event.getPlayer().getUniqueId(), true);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        timeout.put(event.getPlayer().getUniqueId(), 0);
+        init.put(event.getPlayer().getUniqueId(), true);
     }
 }

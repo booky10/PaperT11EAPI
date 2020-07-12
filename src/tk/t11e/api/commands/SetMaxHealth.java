@@ -14,7 +14,7 @@ public class SetMaxHealth extends CommandExecutor {
 
     public SetMaxHealth() {
         super(PaperT11EAPIMain.main, "maxhealth", "/maxhealth <player> <health>",
-                "maxhealth", Receiver.ALL, "setmaxhealth", "smh", "mh");
+                "api.maxhealth", Receiver.ALL, "setmaxhealth", "smh", "mh");
     }
 
     @Override

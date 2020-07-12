@@ -14,7 +14,7 @@ public class ClientCrash extends CommandExecutor {
 
 
     public ClientCrash() {
-        super(PaperT11EAPIMain.main, "clientcrash", "/clientcrash <player>", "clientcrash",
+        super(PaperT11EAPIMain.main, "clientcrash", "/clientcrash <player>", "api.clientcrash",
                 Receiver.ALL);
     }
 
@@ -39,8 +39,8 @@ public class ClientCrash extends CommandExecutor {
         if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null) {
-                if (!target.hasPermission("clientcrash.exempt")
-                        || player.hasPermission("clientcrash.exempt.bypass")) {
+                if (!target.hasPermission("api.clientcrash.exempt")
+                        || player.hasPermission("api.clientcrash.exempt.bypass")) {
                     if (VersionHelper.aboveOr19()) {
                         target.spawnParticle(Particle.EXPLOSION_HUGE, target.getEyeLocation(), Integer.MAX_VALUE);
                         player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully crashed player!");

@@ -22,7 +22,7 @@ public class ApplySkin extends CommandExecutor {
 
 
     public ApplySkin() {
-        super(PaperT11EAPIMain.main, "applyskin", "/applyskin <Name> [Player]", "customskins.apply",
+        super(PaperT11EAPIMain.main, "applyskin", "/applyskin <Name> [Player]", "api.customskins.apply",
                 Receiver.ALL, "applycustomskin", "setcustomskin");
     }
 
@@ -72,7 +72,7 @@ public class ApplySkin extends CommandExecutor {
         if (args.length >= 1 && args.length <= 2) {
             Player target;
             if (args.length == 2) {
-                if (!player.hasPermission("customskins.apply.other")) {
+                if (!player.hasPermission("api.customskins.apply.other")) {
                     player.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                     return;
                 }
@@ -87,7 +87,7 @@ public class ApplySkin extends CommandExecutor {
             File skinFile = new File(CustomSkins.skinFolder, args[0] + ".json");
             if (!skinFile.exists()) {
                 player.sendMessage(PaperT11EAPIMain.PREFIX + "Skin \"" + args[0] + "\" does not exist");
-                if (player.hasPermission("customskins.create"))
+                if (player.hasPermission("api.customskins.create"))
                     player.sendMessage(PaperT11EAPIMain.PREFIX + "Please use \"/createcustomskin\" first!");
                 return;
             }

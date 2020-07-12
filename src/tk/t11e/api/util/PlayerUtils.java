@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class PlayerUtils {
 
@@ -14,6 +15,13 @@ public class PlayerUtils {
         List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers())
             names.add(player.getName());
+        return names;
+    }
+
+    public static List<String> uuidsToNames(List<UUID> uuids) {
+        List<String> names = new ArrayList<>();
+        for (UUID uuid : uuids)
+            names.add(UUIDFetcher.getName(uuid));
         return names;
     }
 

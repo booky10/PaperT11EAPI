@@ -1,8 +1,10 @@
 package tk.t11e.api.commands;
 // Created by booky10 in BungeeT11E (19:07 03.02.20)
 
+import de.cyne.playerranks.rank.RankManager;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -92,7 +94,7 @@ public abstract class CommandExecutor {
             sender.sendMessage("Usage: " + getUsage());
     }
 
-    public List<String> getOnlinePlayerNames() {
+    protected final List<String> getOnlinePlayerNames() {
         List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers())
             if (!player.hasMetadata("vanished"))
@@ -103,7 +105,7 @@ public abstract class CommandExecutor {
         return names;
     }
 
-    public List<String> convertTab(String[] args, List<String> completions) {
+    protected final List<String> convertTab(String[] args, List<String> completions) {
         if (completions == null)
             return Collections.emptyList();
         List<String> list = new ArrayList<>();
@@ -120,6 +122,17 @@ public abstract class CommandExecutor {
         return list;
     }
 
+    protected final String getPrefix(Player player) {
+        if (Bukkit.getPluginManager().isPluginEnabled("PlayerRanks"))
+            return ChatColor.translateAlternateColorCodes('&', RankManager.players.get(player).getPrefix());
+        else
+            return "";
+    }
+
+    protected final String getNoColorPrefix(Player player) {
+        return ChatColor.stripColor(getPrefix(player));
+    }
+
     public abstract void onExecute(CommandSender sender, String[] args);
 
     public abstract void onPlayerExecute(Player player, String[] args);
@@ -133,7 +146,7 @@ public abstract class CommandExecutor {
     }
 
     @SuppressWarnings("NullableProblems")
-    class Executor implements TabExecutor, org.bukkit.command.CommandExecutor {
+    final class Executor implements TabExecutor, org.bukkit.command.CommandExecutor {
 
         @Override
         public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

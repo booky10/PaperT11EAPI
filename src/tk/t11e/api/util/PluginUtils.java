@@ -8,75 +8,62 @@ import org.bukkit.plugin.Plugin;
 public class PluginUtils {
 
     public static void reloadPlugin(String plugin) {
+        PluginNotLoadedException.checkAndThrow("PlugMan");
         reloadPlugin(Bukkit.getPluginManager().getPlugin(plugin));
     }
 
     public static void reloadPlugin(Plugin plugin) {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.reload(plugin);
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.reload(plugin);
     }
 
     public static void reloadPlugins() {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.reloadAll();
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.reloadAll();
     }
 
     public static void enablePlugin(String plugin) {
+        PluginNotLoadedException.checkAndThrow("PlugMan");
         enablePlugin(Bukkit.getPluginManager().getPlugin(plugin));
     }
 
     public static void enablePlugin(Plugin plugin) {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.enable(plugin);
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.enable(plugin);
     }
 
     public static void enablePlugins() {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.enableAll();
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.enableAll();
     }
 
     public static void disablePlugin(String plugin) {
+        PluginNotLoadedException.checkAndThrow("PlugMan");
         disablePlugin(Bukkit.getPluginManager().getPlugin(plugin));
     }
 
     public static void disablePlugin(Plugin plugin) {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.disable(plugin);
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.disable(plugin);
     }
 
     public static void disablePlugins() {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.disableAll();
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.disableAll();
     }
 
     public static void loadPlugin(String plugin) {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.load(plugin);
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.load(plugin);
     }
 
     public static void unloadPlugin(String plugin) {
+        PluginNotLoadedException.checkAndThrow("PlugMan");
         unloadPlugin(Bukkit.getPluginManager().getPlugin(plugin));
     }
 
     public static void unloadPlugin(Plugin plugin) {
-        if (VersionHelper.aboveOr110())
-            PluginUtil.unload(plugin);
-        else
-            throw new IllegalStateException("Tried to use PlugMan while in version " + VersionHelper.getVersion());
+        PluginNotLoadedException.checkAndThrow("PlugMan");
+        PluginUtil.unload(plugin);
     }
-
 }

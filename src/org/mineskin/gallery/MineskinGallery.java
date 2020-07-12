@@ -27,7 +27,7 @@ import org.mineskin.Visibility;
 import org.mineskin.data.Skin;
 import org.mineskin.data.SkinCallback;
 import tk.t11e.api.main.PaperT11EAPIMain;
-import tk.t11e.api.util.ExceptionUtils;
+import tk.t11e.api.util.HeadBuilder;
 import tk.t11e.api.util.PlayerUtils;
 
 import java.io.*;
@@ -38,31 +38,26 @@ import java.net.URLConnection;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 
-@Deprecated
-@SuppressWarnings({"NullableProblems", "ResultOfMethodCallIgnored", "UnusedAssignment"})
 public class MineskinGallery implements Listener, CommandExecutor, TabCompleter {
 
-    final String inventoryGalleryTitle = "§5MineSkin | §bGallery";
-    final String inventoryViewPrefix = "§5MineSkin | §b";
+    private final String TITLE = "§7Gallery", PREFIX = "§7[§bGallery§7] ";
+    private final String agent = "PaperT11EAPI/" + PaperT11EAPIMain.main.getDescription().getVersion();
 
-    final Executor connectionExecutor = Executors.newSingleThreadExecutor();
-    MineskinClient mineskinClient;
-    final File cacheDirectory = new File(PaperT11EAPIMain.main.getDataFolder(), "skinCache");
+    private final Executor connectionExecutor = Executors.newSingleThreadExecutor();
+    private MineskinClient mineskinClient;
+    private final File cacheDirectory = new File(PaperT11EAPIMain.main.getDataFolder(), "skinCache");
 
-    final int galleryPageSize = 36;
-    final boolean enableCache = true;
-    boolean nickNamerEnabled = false;
+    private final int PAGE_SIZE = 36;
+    private boolean nickNamerEnabled = false;
 
-    final Map<UUID, Integer> playerGalleryPages = new HashMap<>();
+    private final Map<UUID, Integer> playerGalleryPages = new HashMap<>();
 
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, PaperT11EAPIMain.main);
         Objects.requireNonNull(PaperT11EAPIMain.main.getCommand("mineskin")).setExecutor(this);
 
-        mineskinClient = new MineskinClient(connectionExecutor,
-                "MineskinGallery/" + PaperT11EAPIMain.main.getDescription().getVersion());
+        mineskinClient = new MineskinClient(connectionExecutor, agent);
 
         nickNamerEnabled = Bukkit.getPluginManager().isPluginEnabled("NickNamer");
 
@@ -71,6 +66,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 PaperT11EAPIMain.main.getLogger().info("Deleted old cached skins.");
             else
                 PaperT11EAPIMain.main.getLogger().severe("Failed to delete skin cache!");
+        //noinspection ResultOfMethodCallIgnored
         cacheDirectory.mkdirs();
     }
 
@@ -84,12 +80,12 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             return true;
         }
 
-        if ("gallery".equalsIgnoreCase(args[0])) {
+        if (args[0].equalsIgnoreCase("gallery")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage("Sorry, you need to be a player to open the gallery");
                 return true;
             }
-            if (!sender.hasPermission("mineskin.gallery")) {
+            if (!sender.hasPermission("api.mineskin.gallery")) {
                 sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
@@ -101,24 +97,24 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     page = Integer.parseInt(args[1]);
                 } catch (NumberFormatException ignored) {
                 }
-                if (args.length > 2) {
+                if (args.length > 2)
                     filter = args[2];
-                }
             }
             page = Math.max(page, 1);
 
-            final Inventory inventory = Bukkit.createInventory(null, 9 * 6, inventoryGalleryTitle);
+            Inventory inventory = Bukkit.createInventory(null, 9 * 6, TITLE);
 
-            sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Loading page #" + page + "...");
+            sender.sendMessage(PaperT11EAPIMain.PREFIX + "Loading page #" + page + "...");
             playerGalleryPages.put(((Player) sender).getUniqueId(), page);
 
-            final int finalPage = page;
-            final String finalFilter = filter;
+            int finalPage = page;
+            String finalFilter = filter;
             connectionExecutor.execute(() -> {
                 try {
-                    URL galleryUrl = new URL("http://api.mineskin.org/get/list/" + finalPage + "?size=" + galleryPageSize + (finalFilter != null ? "&filter=" + finalFilter : ""));
+                    URL galleryUrl = new URL("https://api.mineskin.org/get/list/" + finalPage + "?size="
+                            + PAGE_SIZE + (finalFilter != null ? "&filter=" + finalFilter : ""));
                     URLConnection galleryConnection = galleryUrl.openConnection();
-                    galleryConnection.setRequestProperty("User-Agent", "MineskinGallery/1.0.0-SNAPSHOT");
+                    galleryConnection.setRequestProperty("User-Agent", agent);
                     galleryConnection.connect();
                     InputStreamReader inputStream = new InputStreamReader(galleryConnection.getInputStream());
                     JsonElement galleryElement = new JsonParser().parse(inputStream);
@@ -133,27 +129,22 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         meta.setDisplayName("§cNothing found!");
                         itemStack.setItemMeta(meta);
                         inventory.addItem(itemStack);
-                    } else {
+                    } else
                         for (JsonElement skinElement : skinArray) {
-                            final int id = skinElement.getAsJsonObject().get("id").getAsInt();
+                            int id = skinElement.getAsJsonObject().get("id").getAsInt();
                             connectionExecutor.execute(() -> {
-                                if (inventory.getViewers().isEmpty()) {
+                                if (inventory.getViewers().isEmpty())
                                     return;
-                                }
                                 try {
                                     JsonObject skinObject = getFromCacheOrDownload(id);
 
                                     ItemStack itemStack = makeSkull(id, skinObject);
                                     inventory.addItem(itemStack);
-                                } catch (IOException e) {
-                                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to " +
-                                            "mineskin.org", e);
-                                } catch (Exception e) {
-                                    PaperT11EAPIMain.main.getLogger().log(Level.SEVERE, "Unexpected exception", e);
+                                } catch (Exception exception) {
+                                    throw new IllegalStateException(exception);
                                 }
                             });
                         }
-                    }
 
                     JsonObject pageInfoObject = galleryObject.getAsJsonObject("page");
                     int pageIndex = pageInfoObject.get("index").getAsInt();
@@ -174,7 +165,6 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         itemStack.setItemMeta(meta);
                         inventory.setItem(53, itemStack);
                     }
-
                     if (finalFilter != null) {
                         ItemStack itemStack = new ItemStack(Material.PAPER);
                         ItemMeta meta = itemStack.getItemMeta();
@@ -182,22 +172,21 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         itemStack.setItemMeta(meta);
                         inventory.setItem(49, itemStack);
                     }
-                } catch (IOException e) {
-                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
+                } catch (IOException exception) {
+                    throw new IllegalStateException(exception);
                 }
             });
             return true;
         }
-        if ("view".equalsIgnoreCase(args[0])) {
+        if (args[0].equalsIgnoreCase("view")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage("Sorry, you need to be a player to view skins");
                 return true;
             }
-            if (!sender.hasPermission("mineskin.view")) {
+            if (!sender.hasPermission("api.mineskin.view")) {
                 sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
-
             if (args.length == 1) {
                 sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify the skin ID");
                 return true;
@@ -212,12 +201,11 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify a valid skin ID");
                 return true;
             }
-
             openView(id, (HumanEntity) sender);
             return true;
         }
-        if ("generate".equalsIgnoreCase(args[0])) {
-            if (!sender.hasPermission("mineskin.generate")) {
+        if (args[0].equalsIgnoreCase("generate")) {
+            if (!sender.hasPermission("api.mineskin.generate")) {
                 sender.sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                 return true;
             }
@@ -225,7 +213,6 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 sender.sendMessage(PaperT11EAPIMain.PREFIX + "Please specify an image URL");
                 return true;
             }
-
             try {
                 new URL(args[1]);
             } catch (MalformedURLException e) {
@@ -235,19 +222,17 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
 
             String name = "";
             boolean isPrivate = false;
-            if (args.length > 2) {
+            if (args.length > 2)
                 name = args[2];
-            }
-            if (args.length > 3) {
-                isPrivate = "private".equalsIgnoreCase(args[3]) || "true".equalsIgnoreCase(args[3]);
-            }
+            if (args.length > 3)
+                isPrivate = args[3].equalsIgnoreCase("private")
+                        || args[3].equalsIgnoreCase("true");
 
             mineskinClient.generateUrl(args[1], SkinOptions.create(name, Model.DEFAULT, isPrivate ?
                     Visibility.PRIVATE : Visibility.PUBLIC), new SkinCallback() {
-
                 @Override
-                public void waiting(long l) {
-                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Waiting " + (l / 1000D) + "s for upload...");
+                public void waiting(long time) {
+                    sender.sendMessage(PaperT11EAPIMain.PREFIX + "§7Waiting " + (time / 1000D) + "s for upload...");
                 }
 
                 @Override
@@ -263,16 +248,14 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                 @Override
                 public void exception(Exception exception) {
                     sender.sendMessage(PaperT11EAPIMain.PREFIX + "Unexpected exception: " + exception.getMessage());
-                    PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "Exception while generating skin", exception);
+                    throw new IllegalStateException(exception);
                 }
 
                 @Override
                 public void done(Skin skin) {
                     sender.sendMessage(PaperT11EAPIMain.PREFIX + "§aSkin generated!");
-
-                    if (sender instanceof Player) {
+                    if (sender instanceof Player)
                         openView(skin.id, (Player) sender);
-                    }
                 }
             });
             return true;
@@ -283,50 +266,41 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<>();
-
-        if (args.length == 1) {
-            completions.add("gallery");
-            completions.add("view");
-            completions.add("generate");
-        }
-
+        if (args.length == 1)
+            completions.addAll(Arrays.asList("generate", "view", "gallery"));
         return PlayerUtils.convertTab(args, completions);
     }
 
     JsonObject getFromCacheOrDownload(int id) {
         File cachedFile = new File(cacheDirectory, String.valueOf(id));
-        if (enableCache && cachedFile.exists()) {
+        if (cachedFile.exists())
             try (FileReader reader = new FileReader(cachedFile)) {
                 return new JsonParser().parse(reader).getAsJsonObject();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException exception) {
+                throw new IllegalStateException(exception);
             }
-        } else {
+        else {
             try {
-                URL skinUrl = new URL("http://api.mineskin.org/get/id/" + id);
+                URL skinUrl = new URL("https://api.mineskin.org/get/id/" + id);
                 HttpURLConnection skinConnection = (HttpURLConnection) skinUrl.openConnection();
-                skinConnection.setRequestProperty("User-Agent",
-                        "MineskinGallery/" + PaperT11EAPIMain.main.getDescription().getVersion());
+                skinConnection.setRequestProperty("User-Agent", agent);
                 if (skinConnection.getResponseCode() == 200) {
-                    JsonObject skinObject =
-                            new JsonParser().parse(new InputStreamReader(skinConnection.getInputStream())).getAsJsonObject();
-
-                    if (enableCache) {
-                        cachedFile.createNewFile();
-                        try (FileWriter writer = new FileWriter(cachedFile)) {
-                            writer.write(skinObject.toString());
-                        }
+                    JsonObject skinObject = new JsonParser().parse(new InputStreamReader(skinConnection
+                            .getInputStream())).getAsJsonObject();
+                    //noinspection ResultOfMethodCallIgnored
+                    cachedFile.createNewFile();
+                    try (FileWriter writer = new FileWriter(cachedFile)) {
+                        writer.write(skinObject.toString());
                     }
                     return skinObject;
                 } else if (skinConnection.getResponseCode() == 404) {
                     return null;
                 }
-            } catch (IOException e) {
-                PaperT11EAPIMain.main.getLogger().log(Level.WARNING, "IOException while connecting to mineskin.org", e);
+            } catch (IOException exception) {
+                throw new IllegalStateException(exception);
             }
         }
-        throw new RuntimeException("No cached version of skin #" + id + " available and failed to connect to " +
-                "mineskin.org");
+        throw new RuntimeException("No cached version of skin #" + id + " available and failed to connect to mineskin.org");
     }
 
     @EventHandler
@@ -339,15 +313,14 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
             itemStack = event.getCursor();
 
         if (itemStack != null) {
-            if (inventoryGalleryTitle.equals(event.getView().getTitle())) {
+            if (TITLE.equals(event.getView().getTitle())) {
                 event.setCancelled(true);
                 if (itemStack.hasItemMeta()) {
                     itemStack.getItemMeta().getDisplayName();
                     String filter = "";
                     ItemStack filterItem = event.getClickedInventory().getItem(49);
-                    if (filterItem != null) {
+                    if (filterItem != null)
                         filter = filterItem.getItemMeta().getDisplayName().substring("§7Filter: §b".length());
-                    }
                     if ("§bPrevious page".equals(itemStack.getItemMeta().getDisplayName())) {
                         String page =
                                 Objects.requireNonNull(itemStack.getItemMeta().getLore()).get(0).split("/")[0];
@@ -366,7 +339,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     }
                 }
             }
-            if (event.getView().getTitle().startsWith(inventoryViewPrefix)) {
+            if (event.getView().getTitle().startsWith(PREFIX)) {
                 event.setCancelled(true);
                 if (itemStack.hasItemMeta()) {
                     itemStack.getItemMeta().getDisplayName();
@@ -374,13 +347,13 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                     int skinId =
                             Integer.parseInt(Objects.requireNonNull(skullItem.getItemMeta().getLore()).get(0).substring(1));
                     if ("§bAdd to your inventory".equals(itemStack.getItemMeta().getDisplayName())) {
-                        if (!event.getWhoClicked().hasPermission("mineskin.give.item")) {
+                        if (!event.getWhoClicked().hasPermission("api.mineskin.give.item")) {
                             event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
                         event.getWhoClicked().getInventory().addItem(skullItem);
                     } else if ("§bSet as your own head".equals(itemStack.getItemMeta().getDisplayName())) {
-                        if (!event.getWhoClicked().hasPermission("mineskin.give.head")) {
+                        if (!event.getWhoClicked().hasPermission("api.mineskin.give.head")) {
                             event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
@@ -390,7 +363,7 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
                         }
                         event.getWhoClicked().getInventory().setHelmet(skullItem);
                     } else if ("§bSet as your own skin".equals(itemStack.getItemMeta().getDisplayName())) {
-                        if (!event.getWhoClicked().hasPermission("mineskin.give.skin")) {
+                        if (!event.getWhoClicked().hasPermission("api.mineskin.give.skin")) {
                             event.getWhoClicked().sendMessage(PaperT11EAPIMain.NO_PERMISSION);
                             return;
                         }
@@ -420,23 +393,13 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         }
     }
 
-	/*@EventHandler
-	public void onInventoryClose(InventoryCloseEvent event) {
-		Bukkit.getScheduler().runTaskLater(PaperT11EAPIMain.main, () -> {
-			event.getPlayer().getOpenInventory();
-			String newTitle = event.getPlayer().getOpenInventory().getTitle();
-			if (!newTitle.contains("MineSkin")) {
-				playerGalleryPages.remove(event.getPlayer().getUniqueId());
-			}
-		}, 5);
-	}*/
-
+    @SuppressWarnings("deprecation")
     ItemStack makeSkull(int id, JsonObject skinObject) throws Exception {
         JsonObject textureObject = skinObject.get("data").getAsJsonObject().get("texture").getAsJsonObject();
 
         ItemStack itemStack;
         try {
-            itemStack = new ItemStack(Material.PLAYER_HEAD);
+            itemStack = new ItemStack(Material.valueOf("PLAYER_HEAD"));
         } catch (Exception exception) {
             itemStack = new ItemStack(Material.valueOf("SKULL"), 1, (short) 3);
         }
@@ -459,79 +422,56 @@ public class MineskinGallery implements Listener, CommandExecutor, TabCompleter 
         }
 
         Inventory inventory = Bukkit.createInventory(null, 9 * 6,
-                inventoryViewPrefix + (skinObject.get("name").getAsString().isEmpty() ? ("#" + id)
+                PREFIX + (skinObject.get("name").getAsString().isEmpty() ? ("#" + id)
                         : skinObject.get("name").getAsString()));
 
-        ItemStack skullItem = null;
+        ItemStack skullItem;
         try {
             skullItem = makeSkull(id, skinObject);
-        } catch (Exception e) {
-            ExceptionUtils.print(e);
-            return;
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
         }
         inventory.setItem(13, skullItem);
 
-        {
-            ItemStack viewsItem;
-            try {
-                viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
-                        ? Material.ENDER_EYE : Material.ENDER_PEARL);
-            } catch (Exception exception) {
-                viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
-                        ? Material.valueOf("EYE_OF_ENDER") : Material.ENDER_PEARL);
-            }
-            ItemMeta viewsMeta = viewsItem.getItemMeta();
-            viewsMeta.setDisplayName("§7" + skinObject.get("views").getAsInt() + " §8views");
-            viewsMeta.setLore(Collections.singletonList("§8" + (skinObject.get("private").getAsBoolean() ? "private" : "public")));
-            viewsItem.setItemMeta(viewsMeta);
-            inventory.setItem(8, viewsItem);
+        ItemStack viewsItem;
+        try {
+            viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
+                    ? Material.valueOf("ENDER_EYE") : Material.ENDER_PEARL);
+        } catch (Exception exception) {
+            viewsItem = new ItemStack(skinObject.get("private").getAsBoolean()
+                    ? Material.valueOf("EYE_OF_ENDER") : Material.ENDER_PEARL);
         }
+        ItemMeta viewsMeta = viewsItem.getItemMeta();
+        viewsMeta.setDisplayName("§7" + skinObject.get("views").getAsInt() + " §8views");
+        viewsMeta.setLore(Collections.singletonList("§8" + (skinObject.get("private").getAsBoolean() ? "private" : "public")));
+        viewsItem.setItemMeta(viewsMeta);
+        inventory.setItem(8, viewsItem);
 
-        {
-            ItemStack addToInventoryItem = new ItemStack(Material.CHEST, 1);
-            ItemMeta addToInventoryMeta = addToInventoryItem.getItemMeta();
-            addToInventoryMeta.setDisplayName("§bAdd to your inventory");
-            addToInventoryItem.setItemMeta(addToInventoryMeta);
-            inventory.setItem(27, addToInventoryItem);
-        }
+        ItemStack addToInventoryItem = new ItemStack(Material.CHEST, 1);
+        ItemMeta addToInventoryMeta = addToInventoryItem.getItemMeta();
+        addToInventoryMeta.setDisplayName("§bAdd to your inventory");
+        addToInventoryItem.setItemMeta(addToInventoryMeta);
+        inventory.setItem(27, addToInventoryItem);
 
-        {
-            ItemStack setAsHeadItem;
-            try {
-                setAsHeadItem = new ItemStack(Material.PLAYER_HEAD);
-            } catch (Exception exception) {
-                setAsHeadItem = new ItemStack(Material.valueOf("SKULL"), 1, (short) 3);
-            }
-            ItemMeta setAsHeadMeta = setAsHeadItem.getItemMeta();
-            setAsHeadMeta.setDisplayName("§bSet as your own head");
-            ((SkullMeta) setAsHeadMeta).setOwner(player.getName());
-            setAsHeadItem.setItemMeta(setAsHeadMeta);
-            inventory.setItem(29, setAsHeadItem);
-        }
+        inventory.setItem(29, new HeadBuilder(1, "§bSet as your own head").setSkinName(player.getName()).build());
 
-        {
-            ItemStack setAsSkinItem = new ItemStack(Material.CHAINMAIL_CHESTPLATE, 1);
-            ItemMeta setAsSkinMeta = setAsSkinItem.getItemMeta();
-            setAsSkinMeta.setDisplayName(nickNamerEnabled ? "§bSet as your own skin" : "§8Set as your own skin §7(requires NickNamer)");
-            setAsSkinItem.setItemMeta(setAsSkinMeta);
-            inventory.setItem(31, setAsSkinItem);
-        }
+        ItemStack setAsSkinItem = new ItemStack(Material.CHAINMAIL_CHESTPLATE, 1);
+        ItemMeta setAsSkinMeta = setAsSkinItem.getItemMeta();
+        setAsSkinMeta.setDisplayName(nickNamerEnabled ? "§bSet as your own skin" : "§8Set as your own skin §7(requires NickNamer)");
+        setAsSkinItem.setItemMeta(setAsSkinMeta);
+        inventory.setItem(31, setAsSkinItem);
 
-        {
-            ItemStack openWebItem = new ItemStack(Material.NAME_TAG, 1);
-            ItemMeta openWebMeta = openWebItem.getItemMeta();
-            openWebMeta.setDisplayName("§bShow online");
-            openWebItem.setItemMeta(openWebMeta);
-            inventory.setItem(35, openWebItem);
-        }
+        ItemStack openWebItem = new ItemStack(Material.NAME_TAG, 1);
+        ItemMeta openWebMeta = openWebItem.getItemMeta();
+        openWebMeta.setDisplayName("§bShow online");
+        openWebItem.setItemMeta(openWebMeta);
+        inventory.setItem(35, openWebItem);
 
-        {
-            ItemStack itemStack = new ItemStack(Material.ARROW);
-            ItemMeta meta = itemStack.getItemMeta();
-            meta.setDisplayName("§bGo back");
-            itemStack.setItemMeta(meta);
-            inventory.setItem(49, itemStack);
-        }
+        ItemStack itemStack = new ItemStack(Material.ARROW);
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.setDisplayName("§bGo back");
+        itemStack.setItemMeta(meta);
+        inventory.setItem(49, itemStack);
 
         player.closeInventory();
         player.openInventory(inventory);

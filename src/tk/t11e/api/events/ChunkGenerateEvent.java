@@ -5,6 +5,7 @@ import org.bukkit.Chunk;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.ChunkEvent;
 
+@Deprecated
 public class ChunkGenerateEvent extends ChunkEvent {
 
     public ChunkGenerateEvent(Chunk chunk) {

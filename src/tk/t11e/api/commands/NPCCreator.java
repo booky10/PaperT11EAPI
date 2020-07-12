@@ -32,7 +32,7 @@ public class NPCCreator extends CommandExecutor {
     public static final File npcFolder = new File(PaperT11EAPIMain.main.getDataFolder(), "NPCs");
 
     public NPCCreator() {
-        super(PaperT11EAPIMain.main, "npc", "/npc <create|list|remove> <npc> <skin>", "npc",
+        super(PaperT11EAPIMain.main, "npc", "/npc <create|list|remove> <npc> <skin>", "api.npc",
                 Receiver.ALL);
     }
 
@@ -119,7 +119,7 @@ public class NPCCreator extends CommandExecutor {
                         player.sendMessage(PaperT11EAPIMain.PREFIX + "§aSuccessfully created NPC!");
                     } else
                         player.sendMessage(PaperT11EAPIMain.PREFIX + "The skin does not exits! Create it with " +
-                                "\"/createcustomskin\"!");
+                                "\"/createskin\"!");
                 else
                     player.sendMessage(PaperT11EAPIMain.PREFIX + "Names can only have 16 characters or lower!");
             } else
@@ -131,7 +131,7 @@ public class NPCCreator extends CommandExecutor {
                         List<NPC> NPCs = new ArrayList<>(NPCRegistry.getNPCs());
                         for (NPC npc : NPCs) {
                             Bukkit.getScheduler().runTaskLaterAsynchronously(PaperT11EAPIMain.main, () -> {
-                                npc.remove();
+                                NPCRegistry.unregister(npc);
                                 File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
@@ -143,7 +143,7 @@ public class NPCCreator extends CommandExecutor {
                     Bukkit.getScheduler().runTaskAsynchronously(PaperT11EAPIMain.main, () -> {
                         for (NPC npc : NPCRegistry.getNPCs())
                             if (npc.getLocation().getWorld().getUID().equals(player.getWorld().getUID())) {
-                                npc.remove();
+                                NPCRegistry.unregister(npc);
                                 File file = new File(npcFolder, npc.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
@@ -165,7 +165,7 @@ public class NPCCreator extends CommandExecutor {
                                     }
                                 }
                             if (npcToDelete != null) {
-                                npcToDelete.remove();
+                                NPCRegistry.unregister(npcToDelete);
                                 File file = new File(npcFolder, npcToDelete.getUUID().toString() + ".yml");
                                 if (file.exists())
                                     file.delete();
@@ -180,9 +180,7 @@ public class NPCCreator extends CommandExecutor {
             } else
                 help(player);
         } else
-
             help(player);
-
     }
 
     @Override

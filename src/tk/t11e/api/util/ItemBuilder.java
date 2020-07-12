@@ -8,12 +8,30 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @SuppressWarnings("UnusedReturnValue")
 public class ItemBuilder {
 
+    private static final Class<?> spigotClass;
+    private static final Method setUnbreakableMethod, getUnbreakableMethod, spigotMethod;
+
+    static {
+        try {
+            spigotClass = Class.forName("org.bukkit.inventory.meta.ItemMeta$Spigot");
+            setUnbreakableMethod = spigotClass.getMethod("setUnbreakable", boolean.class);
+            getUnbreakableMethod = spigotClass.getMethod("isUnbreakable");
+            //noinspection JavaReflectionMemberAccess
+            spigotMethod = ItemMeta.class.getMethod("spigot");
+        } catch (ClassNotFoundException | NoSuchMethodException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
     private Material material;
+    private short damage;
     private int amount;
     private String name;
     private boolean unbreakable;
@@ -22,10 +40,11 @@ public class ItemBuilder {
     private List<String> lore;
     private Integer customDataModel;
 
-    public ItemBuilder(Material material, int amount, String name) {
+    public ItemBuilder(Material material, int amount, String name, short damage) {
         this.amount = amount;
         this.material = material;
         this.name = name;
+        this.damage = damage;
         unbreakable = false;
         enchantments = new HashMap<>();
         itemFlags = new ArrayList<>();
@@ -33,12 +52,16 @@ public class ItemBuilder {
         customDataModel = 0;
     }
 
-    public ItemBuilder(Material material, int amount) {
-        this(material, amount, "§f" + material.name().toLowerCase().replace('_', ' '));
+    public ItemBuilder(Material material, int amount, short damage) {
+        this(material, amount, "§f" + material.name().toLowerCase().replace('_', ' '), damage);
     }
 
     public ItemBuilder(Material material) {
-        this(material, 1);
+        this(material, (short) 0);
+    }
+
+    public ItemBuilder(Material material, short damage) {
+        this(material, 1, damage);
     }
 
     public int getAmount() {
@@ -50,10 +73,26 @@ public class ItemBuilder {
         return this;
     }
 
+    public short getDamage() {
+        return damage;
+    }
+
+    public ItemBuilder setDamage(short damage) {
+        this.damage = damage;
+        return this;
+    }
+
+    @SuppressWarnings("deprecation")
     public static ItemBuilder fromItemStack(@NotNull ItemStack from) {
-        ItemBuilder builder = new ItemBuilder(from.getType(), from.getAmount(), getRealDisplayName(from));
+        ItemBuilder builder = new ItemBuilder(from.getType(), from.getAmount(), getRealDisplayName(from), from.getDurability());
         if (VersionHelper.aboveOr111())
             builder.setUnbreakable(from.getItemMeta().isUnbreakable());
+        else
+            try {
+                builder.setUnbreakable((Boolean) getUnbreakableMethod.invoke(spigotMethod.invoke(from.getItemMeta())));
+            } catch (IllegalAccessException | InvocationTargetException exception) {
+                throw new IllegalStateException(exception);
+            }
         builder.setEnchantments(from.getEnchantments());
         builder.setItemFlags(OtherUtils.setToList(from.getItemMeta().getItemFlags()));
         builder.setLore(from.getItemMeta().getLore());
@@ -181,13 +220,20 @@ public class ItemBuilder {
         return this;
     }
 
+    @SuppressWarnings("deprecation")
     public ItemStack build() {
-        ItemStack itemStack = new ItemStack(material, amount);
+        ItemStack itemStack = new ItemStack(material, amount, damage);
         if (material != Material.AIR) {
             ItemMeta itemMeta = itemStack.getItemMeta();
 
             if (VersionHelper.aboveOr111())
                 itemMeta.setUnbreakable(unbreakable);
+            else
+                try {
+                    setUnbreakableMethod.invoke(spigotMethod.invoke(itemMeta), unbreakable);
+                } catch (IllegalAccessException | InvocationTargetException exception) {
+                    throw new IllegalStateException(exception);
+                }
             itemMeta.setDisplayName(name);
             if (VersionHelper.aboveOr114())
                 itemMeta.setCustomModelData(customDataModel);
