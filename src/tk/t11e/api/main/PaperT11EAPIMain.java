@@ -14,6 +14,7 @@ import tk.t11e.api.commands.NPCCreator;
 import tk.t11e.api.commands.SetMaxHealth;
 import tk.t11e.api.listener.JoinLeaveListener;
 import tk.t11e.api.listener.TeleportListener;
+import tk.t11e.api.notesound.utils.MidiUtil;
 import tk.t11e.api.npc.InteractListener;
 import tk.t11e.api.npc.NPC;
 import tk.t11e.api.npc.NPCRegistry;
@@ -64,6 +65,7 @@ public class PaperT11EAPIMain extends PaperPlugin {
     @Override
     public void preDisable() {
         NPCRegistry.unmake();
+        MidiUtil.stop();
     }
 
     private void registerYaml() {

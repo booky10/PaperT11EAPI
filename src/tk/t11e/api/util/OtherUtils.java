@@ -2,7 +2,9 @@ package tk.t11e.api.util;
 // Created by booky10 in PaperT11EAPI (19:27 26.02.20)
 
 import com.sun.istack.internal.NotNull;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Entity;
@@ -30,6 +32,56 @@ public class OtherUtils {
             return keys.iterator().next();
         else
             return null;
+    }
+
+    @CheckReturnValue
+    public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
+        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        Map<K, V> result = new LinkedHashMap<>();
+        for (Map.Entry<K, V> entry : list)
+            result.put(entry.getKey(), entry.getValue());
+        return result;
+    }
+
+    public static String toString(Location location) {
+        if (location == null) throw new IllegalArgumentException("Location is null");
+        String stringLocation = location.getClass().getName() + ":";
+        stringLocation += location.getWorld().getUID() + ":";
+        stringLocation += location.getX() + ":";
+        stringLocation += location.getY() + ":";
+        stringLocation += location.getZ() + ":";
+        stringLocation += location.getYaw() + ":";
+        stringLocation += Float.toString(location.getPitch());
+        return stringLocation;
+    }
+
+    public static Location fromString(String location) {
+        if (location == null) throw new IllegalArgumentException("Location String is null");
+        String[] split = location.split(":");
+        if (split.length != 7) throw new IllegalArgumentException("Location String not right (Length not 7)");
+        if (!split[0].equals(Location.class.getName())) throw new IllegalArgumentException("Location String not right (Unknown Class Name)");
+        World world;
+        try {
+            world = Bukkit.getWorld(UUID.fromString(split[1]));
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Location String not right (World not found)", exception);
+        }
+        try {
+            double x = Double.parseDouble(split[2]);
+            double y = Double.parseDouble(split[3]);
+            double z = Double.parseDouble(split[4]);
+            float yaw = Float.parseFloat(split[5]);
+            float pitch = Float.parseFloat(split[6]);
+            try {
+                return new Location(world, x, y, z, yaw, pitch);
+            } catch (Exception exception) {
+                throw new IllegalArgumentException("Something went wrong while creating Location from String", exception);
+            }
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Location String not right (Coordinate/Direction not a Number)", exception);
+        }
     }
 
     public static void move(Entity entity, Location location) {

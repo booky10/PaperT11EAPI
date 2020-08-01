@@ -10,8 +10,7 @@ import tk.t11e.api.util.AttributeHelper;
 import java.util.List;
 
 public class SetMaxHealth extends CommandExecutor {
-
-
+    
     public SetMaxHealth() {
         super(PaperT11EAPIMain.main, "maxhealth", "/maxhealth <player> <health>",
                 "api.maxhealth", Receiver.ALL, "setmaxhealth", "smh", "mh");

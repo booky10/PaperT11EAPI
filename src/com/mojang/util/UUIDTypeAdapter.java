@@ -9,12 +9,14 @@ import java.util.UUID;
 
 public class UUIDTypeAdapter extends TypeAdapter<UUID> {
 
-    public void write(JsonWriter out, UUID value) throws IOException {
-        out.value(fromUUID(value));
+    @Override
+    public void write(JsonWriter write, UUID value) throws IOException {
+        write.value(fromUUID(value));
     }
 
-    public UUID read(JsonReader in) throws IOException {
-        return fromString(in.nextString());
+    @Override
+    public UUID read(JsonReader reader) throws IOException {
+        return fromString(reader.nextString());
     }
 
     public static String fromUUID(UUID value) {

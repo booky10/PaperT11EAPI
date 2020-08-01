@@ -1,7 +1,7 @@
 ---
 name: PaperT11EAPI
 main: tk.t11e.api.main.PaperT11EAPIMain
-version: '1.4.3-SNAPSHOT'
+version: '1.4.4-SNAPSHOT'
 description: An API plugin
 author: booky10
 load: POSTWORLD

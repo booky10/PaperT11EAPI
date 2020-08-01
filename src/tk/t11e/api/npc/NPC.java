@@ -6,9 +6,11 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scoreboard.Team;
 import org.mineskin.MineskinClient;
 import org.mineskin.customskins.CustomSkins;
 import tk.t11e.api.main.PaperT11EAPIMain;
@@ -40,6 +42,7 @@ public class NPC {
     private Object world = null;
     private GameProfile profile;
     private Player npc;
+    private Team team = null;
 
     private final Class<?> craftPlayerClass = VersionHelper.getOBCClass("entity.CraftPlayer");
     private final Class<?> entityPlayerClass = VersionHelper.getNMSClass("EntityPlayer");
@@ -116,6 +119,7 @@ public class NPC {
         } finally {
             NPCRegistry.register(this);
         }
+        getTeam();
     }
 
     public void setProperty(Property property) {
@@ -222,6 +226,75 @@ public class NPC {
         return this;
     }
 
+    public Team getTeam() {
+        if (team == null)
+            team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(uuid.toString());
+        return team;
+    }
+
+    public NPC setPrefix(String prefix) {
+        if (VersionHelper.aboveOr113())
+            prefix = prep(prefix);
+        else
+            prefix = prepShort(prefix);
+        prefix = transform(prefix);
+        team.setPrefix(prefix);
+        return this;
+    }
+
+    public NPC setSuffix(String suffix) {
+        if (VersionHelper.aboveOr113())
+            suffix = prep(suffix);
+        else
+            suffix = prepShort(suffix);
+        suffix = transform(suffix);
+        team.setSuffix(suffix);
+        return this;
+    }
+
+    public NPC setNameColor(ChatColor color) {
+        team.setColor(color);
+        return this;
+    }
+
+    private String transform(String part) {
+        if (VersionHelper.aboveOr113())
+            return part;
+        else if (part.length() > 16)
+            return part.substring(16);
+        else
+            return part;
+    }
+
+    private String prep(String color) {
+        List<String> parts;
+        if (VersionHelper.aboveOr113())
+            parts = convertIntoPieces(color, 64);
+        else
+            parts = convertIntoPieces(color, 15);
+        return parts.get(0) + "§f" + ChatColor.getLastColors(parts.get(0)) + parts.get(1);
+    }
+
+    private String prepShort(String color) {
+        if (color.length() > 16) {
+            List<String> pieces = convertIntoPieces(color, 16);
+            return pieces.get(0) + "§f" + ChatColor.getLastColors(pieces.get(0)) + pieces.get(1);
+        } else
+            return color;
+    }
+
+    private List<String> convertIntoPieces(String string, int allowedLength) {
+        List<String> parts = new ArrayList<>();
+        if (ChatColor.stripColor(string).length() > allowedLength) {
+            String substring = string.substring(allowedLength);
+            if (substring.length() > allowedLength)
+                substring = substring.substring(0, allowedLength);
+            parts.addAll(Arrays.asList(string.substring(0, allowedLength), substring));
+        } else
+            parts.addAll(Arrays.asList(string, ""));
+        return parts;
+    }
+
     public NPC removeFromTabList() {
         for (Player player : Bukkit.getOnlinePlayers())
             removeFromTabList(player);
@@ -255,7 +328,7 @@ public class NPC {
                 List<Object> equipmentPackets = new ArrayList<>();
                 for (ItemSlot slot : equipment.keySet())
                     if (VersionHelper.aboveOr(slot.firstVersion))
-                        equipmentPackets.add(entityEquipmentConstructor.newInstance((int) getEntityID(),
+                        equipmentPackets.add(entityEquipmentConstructor.newInstance(getEntityID(),
                                 slot.getAsEnumItemSlot(), nmsCopyMethod.invoke(null, equipment.get(slot))));
 
                 Object watcher = entityPlayerClass.getMethod("getDataWatcher").invoke(entity);

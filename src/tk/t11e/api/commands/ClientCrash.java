@@ -12,7 +12,6 @@ import java.util.List;
 
 public class ClientCrash extends CommandExecutor {
 
-
     public ClientCrash() {
         super(PaperT11EAPIMain.main, "clientcrash", "/clientcrash <player>", "api.clientcrash",
                 Receiver.ALL);

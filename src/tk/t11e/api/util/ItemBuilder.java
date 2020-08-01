@@ -15,19 +15,19 @@ import java.util.*;
 @SuppressWarnings("UnusedReturnValue")
 public class ItemBuilder {
 
-    private static final Class<?> spigotClass;
-    private static final Method setUnbreakableMethod, getUnbreakableMethod, spigotMethod;
+    private static Method setUnbreakableMethod, getUnbreakableMethod, spigotMethod;
 
     static {
-        try {
-            spigotClass = Class.forName("org.bukkit.inventory.meta.ItemMeta$Spigot");
-            setUnbreakableMethod = spigotClass.getMethod("setUnbreakable", boolean.class);
-            getUnbreakableMethod = spigotClass.getMethod("isUnbreakable");
-            //noinspection JavaReflectionMemberAccess
-            spigotMethod = ItemMeta.class.getMethod("spigot");
-        } catch (ClassNotFoundException | NoSuchMethodException exception) {
-            throw new IllegalStateException(exception);
-        }
+        if (VersionHelper.belowOr18())
+            try {
+                Class<?> spigotClass = Class.forName("org.bukkit.inventory.meta.ItemMeta$Spigot");
+                setUnbreakableMethod = spigotClass.getMethod("setUnbreakable", boolean.class);
+                getUnbreakableMethod = spigotClass.getMethod("isUnbreakable");
+                //noinspection JavaReflectionMemberAccess
+                spigotMethod = ItemMeta.class.getMethod("spigot");
+            } catch (ClassNotFoundException | NoSuchMethodException exception) {
+                throw new IllegalStateException(exception);
+            }
     }
 
     private Material material;
@@ -222,7 +222,11 @@ public class ItemBuilder {
 
     @SuppressWarnings("deprecation")
     public ItemStack build() {
-        ItemStack itemStack = new ItemStack(material, amount, damage);
+        ItemStack itemStack;
+        if (!VersionHelper.aboveOr113() || material.isLegacy())
+            itemStack = new ItemStack(material, amount, damage);
+        else
+            itemStack = new ItemStack(material, amount);
         if (material != Material.AIR) {
             ItemMeta itemMeta = itemStack.getItemMeta();
 

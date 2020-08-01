@@ -26,7 +26,7 @@ public class InventoryBuilder {
         this.title = title;
         this.contents = new ItemStack[size];
         this.pattern = "";
-        fillInventory(Material.AIR);
+        fillInventory(new ItemStack(Material.AIR));
         build();
     }
 
@@ -67,7 +67,9 @@ public class InventoryBuilder {
     }
 
     public InventoryBuilder fillInventory(Material filler) {
-        return fillInventory(new ItemBuilder(filler).addAllItemFlags().noName());
+        ItemBuilder builder = new ItemBuilder(filler);
+        builder.addAllItemFlags().noName();
+        return fillInventory(builder.build());
     }
 
     public InventoryBuilder addItem(Material item) {

@@ -72,6 +72,7 @@ public abstract class CommandExecutor {
     public CommandExecutor init() {
         Objects.requireNonNull(plugin.getCommand(getCommand())).setExecutor(getExecutor());
         Objects.requireNonNull(plugin.getCommand(getCommand())).setAliases(getAliases());
+        getPlugin().getLogger().info("Loaded command \"" + command + "\"!");
         return this;
     }
 
